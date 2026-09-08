@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reserva — Recanto Bosque</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="shell">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="name">Recanto Bosque</div>
+      <div class="tag" id="profile-tag">—</div>
+    </div>
+    <div class="nav-group-label">operação</div>
+    <a class="nav-item" data-screen="recepcao" href="recepcao.html"><span class="k">·</span> Painel da Recepção</a>
+    <a class="nav-item active" data-screen="reservas" href="reservas.html"><span class="k">·</span> Reservas</a>
+    <a class="nav-item" data-screen="mapa" href="mapa.html"><span class="k">·</span> Mapa de Ocupação</a>
+    <a class="nav-item" data-screen="governanca" href="governanca.html"><span class="k">·</span> Governança &amp; Manutenção</a>
+    <div class="nav-group-label">administração</div>
+    <a class="nav-item" data-screen="auditoria" href="auditoria.html"><span class="k">·</span> Log de Auditoria</a>
+    <div class="sidebar-footer">
+      <button class="logoff" onclick="doLogoff()">↩ sair (logoff)</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="title-group">
+        <a class="back-btn" href="reservas.html">← voltar</a>
+        <div class="title" id="form-title-page">Nova reserva</div>
+      </div>
+      <div class="meta">
+        <span id="meta-operator">Operador: —</span>
+        <span>08/09/2026</span>
+      </div>
+    </div>
+    <div class="content" id="content">
+      <div class="form-panel">
+        <div class="form-title" id="form-title">Nova reserva</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>hóspede</label>
+            <input id="f-hospede" type="text">
+          </div>
+          <div class="field">
+            <label>chalé</label>
+            <select id="f-chale"></select>
+          </div>
+          <div class="field">
+            <label>check-in</label>
+            <input id="f-checkin" type="date">
+          </div>
+          <div class="field">
+            <label>check-out</label>
+            <input id="f-checkout" type="date">
+          </div>
+        </div>
+        <div id="form-error" class="field-error-msg" style="display:none; margin-bottom:10px;"></div>
+        <div class="form-actions">
+          <button class="mini-btn primary" onclick="saveReserva()">salvar</button>
+          <a class="mini-btn" href="reservas.html">cancelar</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/store.js"></script>
+<script src="../js/shell.js"></script>
+<script src="../js/page-reserva-form.js"></script>
+</body>
+</html>
