@@ -1,19 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+void painelRecep();
 
 int main(){
-    char usuario[15];
-    char senha[8];
+    char usuario[30];
+    char senha[20];
 
     printf("=================\nRECANTO DO BOSQUE\n=================");
     printf("\nAutenticacao de funcionario");
 
     printf("\n\nUsuario: ");
-    scanf("%14s", usuario);
+    scanf("%29s", usuario);
 
     printf("\nSenha: ");
-    scanf("%7s", senha);
+    scanf("%19s", senha);
 
+    if(strcmp(usuario, "marcos.recepcao") == 0 && strcmp(senha,"123456") == 0){
+      printf("\nLogin realizado com sucesso!\n");
+      printf("====================================\nENCAMINHANDO PARA PAINEL DE RECEPCAO\n====================================");
+    } else { 
+        printf("\nUsuario ou senha incorretos.\n");
+    }
+    
     return 0;
 
 }
