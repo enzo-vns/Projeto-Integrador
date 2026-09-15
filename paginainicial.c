@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+void painelRecep();
+
 int main(){
     char usuario[30];
     char senha[20];
@@ -15,12 +17,10 @@ int main(){
     printf("\nSenha: ");
     scanf("%19s", senha);
 
-    if(strcmp(usuario, "marcos.recepcao") == 0 && strcmp(senha, "123456") == 0) {
-        printf("\nLogin realizado com sucesso!\n");
-
-    //Tela da recepção aqui
-
-    } else {
+    if(strcmp(usuario, "marcos.recepcao") == 0 && strcmp(senha,"123456") == 0){
+      printf("\nLogin realizado com sucesso!\n");
+      printf("====================================\nENCAMINHANDO PARA PAINEL DE RECEPCAO\n====================================");
+    } else { 
         printf("\nUsuario ou senha incorretos.\n");
     }
     
