@@ -275,8 +275,23 @@ const server = http.createServer(async (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  const url = `http://localhost:${PORT}`;
+let currentPort = Number(process.env.PORT) || 3000;
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`⚠️ A porta ${currentPort} já está ocupada por outro processo.`);
+    currentPort++;
+    console.log(`🔄 Tentando automaticamente a porta ${currentPort}...`);
+    setTimeout(() => {
+      server.listen(currentPort);
+    }, 200);
+  } else {
+    console.error('Erro no servidor:', err.message);
+  }
+});
+
+server.listen(currentPort, () => {
+  const url = `http://localhost:${currentPort}`;
   console.log('\n============================================================');
   console.log('   🏨 RECANTO BOSQUE — SISTEMA DE GESTÃO INTEGRADO          ');
   console.log('============================================================');
@@ -305,3 +320,4 @@ server.listen(PORT, () => {
     }
   });
 });
+
