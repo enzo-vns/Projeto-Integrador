@@ -22,7 +22,6 @@ As telas do sistema foram modeladas com base nas contribuições dos integrantes
 ```text
 Projeto-Integrador/
 ├── server.js                # Servidor Back-end com API REST (Node.js)
-├── server.py                # Servidor alternativo em Python
 ├── package.json             # Scripts de inicialização (npm start)
 ├── iniciar.sh               # Script de 1 clique para iniciar no terminal
 ├── data/
@@ -65,7 +64,7 @@ Para ver e usar o sistema com a **interface visual completa** no seu navegador, 
 npm start
 ```
 
-*(Ou execute: `./iniciar.sh` ou `python3 server.py`)*
+*(Ou execute: `./iniciar.sh` ou `node server.js`)*
 
 ### O que acontece:
 1. O servidor inicia na porta `3000`.
