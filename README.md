@@ -26,8 +26,6 @@ O projeto consolida as contribuições desenvolvidas pelos integrantes da equipe
   - Módulos de reservas, hóspedes e consumo (`backend/reservas.c`, `backend/hospedes.c`, `backend/consumo.c`, `telas/tela_operacoes.c`).
   - Automação de compilação multiplataforma com `Makefile` e documentação técnica.
 
-> **Arquivos Originais:** Os arquivos de código enviados individualmente nas branches continuam preservados na pasta [`originais/`](originais/) para consulta e avaliação do professor.
-
 ---
 
 ## 📁 Estrutura do Projeto
@@ -54,14 +52,8 @@ Projeto-Integrador/
 │   ├── tela_auditoria.c / .h    # Tela do relatório de auditoria paginado (Rayane)
 │   └── tela_operacoes.c / .h    # Subtelas de Check-in, Check-out, Reservas, etc.
 │
-├── common/                      # UTILITÁRIOS GLOBAIS
-│   └── common.c / .h            # Limpeza de tela multiplataforma, leitura segura e datas
-│
-└── originais/                   # CÓDIGOS ORIGINAIS DAS BRANCHES INDIVIDUAIS
-    ├── Gerenciador-chales.c     # Carlos
-    ├── auditoriadoadm.c         # Rayane
-    ├── paginainicial.c          # Rayane
-    └── painelRecep.c            # João
+└── common/                      # UTILITÁRIOS GLOBAIS
+    └── common.c / .h            # Limpeza de tela multiplataforma, leitura segura e datas
 ```
 
 ---
