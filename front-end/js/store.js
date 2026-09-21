@@ -1,4 +1,4 @@
-/* ---------------- estado compartilhado (persistido em localStorage) ---------------- */
+/* ---------------- estado compartilhado (integrado com Back-end e localStorage) ---------------- */
 const STORAGE_KEY = 'rb_state_v1';
 
 const USERS = {
@@ -39,9 +39,9 @@ function seedState(){
     nextConsumoId: 1,
     lastGovChange: null,
     auditLog: [
-      { hora:'08/09/2026 08:30', usuario:'ana.gov',    acao:'STATUS_CHALE',      detalhe:'CH-02 alterado para LIMPEZA' },
-      { hora:'08/09/2026 09:12', usuario:'marcos.rec', acao:'CHECKIN_REALIZADO', detalhe:'Reserva #104 (Hóspede: Carlos)' },
-      { hora:'08/09/2026 09:15', usuario:'marcos.rec', acao:'CANCELA_RESERVA',   detalhe:'Res #98 — Motivo: Desistência' },
+      { hora:'20/09/2026 18:36', usuario:'ana.gov',    acao:'STATUS_CHALE',      detalhe:'CH-02 alterado para LIMPEZA' },
+      { hora:'20/09/2026 21:00', usuario:'marcos.rec', acao:'CHECKIN_REALIZADO', detalhe:'Reserva #87 (Hospede: Carlos)' },
+      { hora:'20/09/2026 21:43', usuario:'marcos.rec', acao:'CANCELA_RESERVA',   detalhe:'Reserva #97 - Motivo: Desistencia' },
       { hora:'07/09/2026 19:04', usuario:'diretoria',  acao:'LOGIN',             detalhe:'Acesso ao painel administrativo' },
       { hora:'07/09/2026 17:40', usuario:'ana.gov',    acao:'STATUS_CHALE',      detalhe:'CH-04 alterado para MANUTENÇÃO' },
     ],
@@ -58,12 +58,54 @@ function loadState(){
 
 let state = loadState();
 
+// Salva o estado tanto no localStorage (para rapidez) quanto no Back-end (para persistência em arquivo)
 function saveState(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch(e){}
+
+  // Sincronização em tempo real com a API Back-end
+  if (typeof fetch !== 'undefined') {
+    fetch('/api/state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
+    }).catch(err => {
+      // Back-end offline ou execução direta via file://
+      console.warn('[Back-end] Modo offline: dados persistidos localmente.');
+    });
+  }
 }
 
+// Sincroniza dados com o servidor Back-end logo ao carregar a página
+function syncWithBackend(){
+  if (typeof fetch === 'undefined') return;
+  fetch('/api/state')
+    .then(res => {
+      if (!res.ok) throw new Error('Falha ao obter estado do servidor');
+      return res.json();
+    })
+    .then(serverData => {
+      if (serverData && serverData.chales) {
+        const userSalvo = state.currentUser;
+        state = Object.assign({}, state, serverData);
+        if (userSalvo && !state.currentUser) state.currentUser = userSalvo;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        console.log('✅ [Back-end] Dados sincronizados com o servidor.');
+      }
+    })
+    .catch(() => {
+      // Ignora silenciosamente se o servidor não estiver respondendo
+    });
+}
+
+// Inicia a sincronização de fundo com o back-end
+syncWithBackend();
+
 function nowStr(){
-  return '08/09/2026 ' + new Date().toTimeString().slice(0,5);
+  const agora = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(agora.getDate())}/${pad(agora.getMonth() + 1)}/${agora.getFullYear()} ${pad(agora.getHours())}:${pad(agora.getMinutes())}`;
 }
 
 function addAuditEntry(acao, detalhe){

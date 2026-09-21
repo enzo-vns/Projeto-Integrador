@@ -13,7 +13,7 @@ function clearLoginErrors(){
   document.getElementById('login-pass').classList.remove('field-error');
 }
 
-function doLogin(){
+async function doLogin(){
   clearLoginErrors();
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value;
@@ -40,6 +40,28 @@ function doLogin(){
     status.classList.add('err');
     status.textContent = 'Não foi possível autenticar. Corrija os campos acima.';
     return;
+  }
+
+  // Tenta autenticação via API do Back-end
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario: u, senha: p })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const user = data.user || USERS[u];
+      status.textContent = `Login realizado com sucesso! Perfil: ${user.roleLabel.toUpperCase()}`;
+      state.currentUser = user;
+      saveState();
+      setTimeout(()=>{
+        location.href = ROLE_HOME[user.role] || 'recepcao.html';
+      }, 450);
+      return;
+    }
+  } catch(e){
+    // Se o back-end estiver offline, segue pelo fluxo local
   }
 
   const user = USERS[u];

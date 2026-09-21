@@ -8,7 +8,7 @@ Projeto Integrador desenvolvido para gestão das operações do hotel/pousada **
 
 O projeto integra os desenvolvimentos realizados nas diferentes branches da equipe:
 
-- **Enzo** (`pi-enzo`): Desenvolvimento do **Front-end Web** (HTML, CSS e JavaScript puro, sem frameworks pesados).
+- **Enzo** (`pi-enzo`): Desenvolvimento do **Front-end Web** (HTML, CSS e JavaScript puro) e servidor de integração API.
 - **Carlos** (`pi-carlos`): Desenvolvimento do **Mapa de Ocupação** e gerenciamento de status dos chalés em C.
 - **João** (`pi-joao`): Desenvolvimento do **Painel da Recepção** e máquina de estados para navegação em C.
 - **Rayane** (`pi-rayane`): Desenvolvimento da **Autenticação (Login)** e do módulo de **Auditoria de Operações** em C.
@@ -19,10 +19,17 @@ O projeto integra os desenvolvimentos realizados nas diferentes branches da equi
 
 ```text
 Projeto-Integrador/
+├── server.js                # Servidor HTTP & Back-end API REST unificado
+├── package.json             # Scripts de inicialização (npm start)
+├── iniciar.sh               # Script de execução rápida para terminal
+├── data/
+│   └── database.json        # Banco de dados persistente compartilhado
+│
 ├── front-end/               # Interface Web completa
+│   ├── index.html           # Redirecionador automático para tela de login
 │   ├── html/                # Telas (login, recepção, mapa, auditoria, etc.)
 │   ├── css/                 # Folhas de estilo (style.css)
-│   ├── js/                  # Estado global (store.js), shell e lógica das páginas
+│   ├── js/                  # Estado sincronizado com a API (store.js) e páginas
 │   └── README.md            # Documentação específica do Front-end
 │
 ├── back-end/                # Sistema unificado em C (Console / Terminal)
@@ -38,38 +45,35 @@ Projeto-Integrador/
 
 ---
 
-## 🚀 Como Executar
+## 🚀 Como Executar o Sistema Integrado (Front-end + Back-end)
 
-### 1. Front-end (Web)
+O jeito mais fácil e completo de rodar o sistema inteiro conectado (servidor back-end servindo a interface web e processando as requisições com persistência em disco):
 
-O front-end não requer etapa de build. Para executá-lo:
+No terminal, na pasta raiz do projeto:
 
-**Com Python:**
 ```bash
-cd front-end
-python3 -m http.server 8000
+npm start
 ```
-Acesse no navegador: [http://localhost:8000/html/index.html](http://localhost:8000/html/index.html)
+*(ou `node server.js` ou `./iniciar.sh`)*
 
-**Com Node.js (opcional):**
-```bash
-cd front-end
-npx serve .
-```
+Isso irá:
+1. Iniciar o servidor HTTP e a API Back-end em `http://localhost:3000`.
+2. Abrir automaticamente a aplicação no seu navegador padrão.
+3. Conectar a interface web à API REST com logs de operações em tempo real no terminal.
+4. Salvar todas as alterações (check-in, check-out, novas reservas, logs de auditoria) no arquivo `data/database.json`.
 
 ---
 
-### 2. Back-end (C)
+## 💻 Como Executar o Back-end em C (Terminal / Console)
 
-O back-end é compilável via `make` ou compilador C padrão (`gcc` / `clang`):
+Para rodar a versão de console em C desenvolvida pela equipe:
 
 ```bash
 cd back-end
-make
 make run
 ```
 
-Ou compilação direta:
+Ou compilação direta via GCC:
 ```bash
 cd back-end
 gcc -Wall -Wextra -std=c99 -Iinclude src/*.c -o bin/sistema_recanto
@@ -80,7 +84,7 @@ gcc -Wall -Wextra -std=c99 -Iinclude src/*.c -o bin/sistema_recanto
 
 ## 🔑 Credenciais para Teste
 
-As mesmas credenciais são aceitas tanto no sistema em C quanto no Front-end:
+As mesmas credenciais são aceitas tanto na aplicação web quanto no sistema em C:
 
 | Usuário | Senha | Perfil | Telas / Acessos |
 |---|---|---|---|
