@@ -1,7 +1,7 @@
 #ifndef CHALES_H
 #define CHALES_H
 
-#include "../common/common.h"
+#include "common.h"
 
 #define NUM_CHALES     4
 #define DIAS_VISIVEIS  5   

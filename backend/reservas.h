@@ -1,7 +1,7 @@
 #ifndef RESERVAS_H
 #define RESERVAS_H
 
-#include "../common/common.h"
+#include "common.h"
 #include "chales.h"
 
 #define MAX_RESERVAS 50

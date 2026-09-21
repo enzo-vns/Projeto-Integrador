@@ -22,7 +22,7 @@ O projeto consolida as contribuições desenvolvidas pelos integrantes da equipe
   - Módulo de autenticação de funcionários (`backend/auth.c` e `telas/tela_login.c`).
   - Módulo e relatório de auditoria de operações críticas com paginação e filtro por usuário (`backend/auditoria.c` e `telas/tela_auditoria.c`).
 - **Enzo** (`pi-enzo`):
-  - Integração geral dos módulos em C, estruturação da arquitetura em camadas (`backend/`, `telas/`, `common/`).
+  - Integração geral dos módulos em C, estruturação da arquitetura em camadas (`backend/` e `telas/`).
   - Módulos de reservas, hóspedes e consumo (`backend/reservas.c`, `backend/hospedes.c`, `backend/consumo.c`, `telas/tela_operacoes.c`).
   - Automação de compilação multiplataforma com `Makefile` e documentação técnica.
 
@@ -43,17 +43,15 @@ Projeto-Integrador/
 │   ├── reservas.c / .h          # Gerenciamento de reservas, check-in e check-out
 │   ├── hospedes.c / .h          # Cadastro e consulta de hóspedes
 │   ├── consumo.c / .h           # Lançamento e cálculo de consumo dos chalés
-│   └── auditoria.c / .h         # Armazenamento e log de operações críticas (Rayane)
+│   ├── auditoria.c / .h         # Armazenamento e log de operações críticas (Rayane)
+│   └── common.c / .h            # Utilitários (limpar tela, leitura segura e datas)
 │
-├── telas/                       # INTERFACE COM O USUÁRIO (Telas de Console / Terminal)
-│   ├── tela_login.c / .h        # Tela de Login de funcionários (Rayane)
-│   ├── tela_recepcao.c / .h     # Painel principal e máquina de estados (João)
-│   ├── tela_mapa.c / .h         # Tela do mapa semanal de chalés (Carlos)
-│   ├── tela_auditoria.c / .h    # Tela do relatório de auditoria paginado (Rayane)
-│   └── tela_operacoes.c / .h    # Subtelas de Check-in, Check-out, Reservas, etc.
-│
-└── common/                      # UTILITÁRIOS GLOBAIS
-    └── common.c / .h            # Limpeza de tela multiplataforma, leitura segura e datas
+└── telas/                       # INTERFACE COM O USUÁRIO (Telas de Console / Terminal)
+    ├── tela_login.c / .h        # Tela de Login de funcionários (Rayane)
+    ├── tela_recepcao.c / .h     # Painel principal e máquina de estados (João)
+    ├── tela_mapa.c / .h         # Tela do mapa semanal de chalés (Carlos)
+    ├── tela_auditoria.c / .h    # Tela do relatório de auditoria paginado (Rayane)
+    └── tela_operacoes.c / .h    # Subtelas de Check-in, Check-out, Reservas, etc.
 ```
 
 ---

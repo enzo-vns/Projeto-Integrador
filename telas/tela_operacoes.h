@@ -1,7 +1,7 @@
 #ifndef TELA_OPERACOES_H
 #define TELA_OPERACOES_H
 
-#include "../common/common.h"
+#include "../backend/common.h"
 
 // Subtelas do sistema hoteleiro (Front-end de console)
 EstadoSistema exibir_tela_disponibilidade(const SessaoUsuario *sessao);

@@ -1,7 +1,7 @@
 #ifndef CONSUMO_H
 #define CONSUMO_H
 
-#include "../common/common.h"
+#include "common.h"
 
 #define MAX_CONSUMO 100
 

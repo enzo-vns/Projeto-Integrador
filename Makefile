@@ -1,11 +1,11 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -I. -Icommon -Ibackend -Itelas
+CFLAGS = -Wall -Wextra -std=c99 -I. -Ibackend -Itelas
 
 OBJDIR = obj
 BINDIR = bin
 
 SRCS = main.c \
-       common/common.c \
+       backend/common.c \
        backend/chales.c \
        backend/reservas.c \
        backend/hospedes.c \

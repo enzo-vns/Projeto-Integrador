@@ -1,7 +1,7 @@
 #ifndef HOSPEDES_H
 #define HOSPEDES_H
 
-#include "../common/common.h"
+#include "common.h"
 
 #define MAX_HOSPEDES 50
 

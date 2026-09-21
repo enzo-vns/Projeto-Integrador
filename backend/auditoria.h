@@ -1,7 +1,7 @@
 #ifndef AUDITORIA_H
 #define AUDITORIA_H
 
-#include "../common/common.h"
+#include "common.h"
 
 #define MAX_LOGS 100
 
