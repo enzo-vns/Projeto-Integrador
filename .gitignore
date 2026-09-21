@@ -1,2 +1,17 @@
-main.exe
-paginainicial.exe
+# Binários e arquivos compilados
+*.exe
+*.o
+*.out
+bin/
+obj/
+sistema_recanto
+main
+paginainicial
+Gerenciador-chales
+painelRecep
+
+# Sistema operacional e IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
