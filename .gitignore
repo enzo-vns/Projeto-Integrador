@@ -1,21 +1,17 @@
-# Binários e arquivos compilados
+# Binários e executáveis compilados
 *.exe
 *.o
 *.out
-bin/
 obj/
+bin/
 sistema_recanto
 main
 paginainicial
 Gerenciador-chales
 painelRecep
 
-# Sistema operacional e IDEs
+# Sistema operacional e editores
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
-
-# Python cache
-__pycache__/
-*.pyc
