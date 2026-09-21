@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recanto Bosque — Sistema de Gestão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-band">
+      <div class="mark">Recanto Bosque</div>
+      <div class="sub">sistema de gestão · autenticação de funcionário</div>
+    </div>
+    <div class="login-body">
+      <div class="field">
+        <label>usuário</label>
+        <input id="login-user" type="text" value="marcos.recepcao">
+        <div class="field-error-msg" id="user-error" style="display:none;"></div>
+      </div>
+      <div class="field">
+        <label>senha</label>
+        <input id="login-pass" type="password" value="">
+        <div class="field-error-msg" id="pass-error" style="display:none;"></div>
+      </div>
+      <button class="login-btn" onclick="doLogin()">Entrar</button>
+      <div class="login-status" id="login-status"></div>
+      <div class="login-note">
+        Perfis de teste: <b>marcos.recepcao</b> (Recepção), <b>ana.governanca</b> (Governança), <b>diretoria.admin</b> (Administrador). Senha: qualquer valor com 4+ caracteres.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/store.js"></script>
+<script src="../js/page-login.js"></script>
+</body>
+</html>

@@ -1,105 +1,106 @@
-# Recanto Bosque — Sistema de Gestão Hoteleira (C)
+# Recanto Bosque — Sistema de Gestão Hoteleira
 
-Projeto Integrador desenvolvido em **Linguagem C** para terminal/console, modelado com arquitetura modular dividida entre **Front-end (Telas e Interface com o Usuário)** e **Back-end (Lógica de Negócio, Dados e Regras)**.
-
-O sistema atende a todas as operações de um hotel/pousada: autenticação de funcionários por perfil, mapa de ocupação semanal de chalés, gestão de reservas, check-in, check-out, lançamento de consumo e relatório de auditoria de operações críticas.
+Projeto Integrador desenvolvido para a gestão completa das operações do hotel/pousada **Recanto Bosque**. O projeto integra a arquitetura de **Front-end** e **Back-end**, contemplando tanto uma **interface visual (Web)** quanto uma **versão completa em C para terminal**.
 
 ---
 
-## 👥 Equipe e Atribuição de Módulos
+## 👥 Equipe e Telas Desenvolvidas
 
-O projeto unifica o trabalho desenvolvido pelos membros nas branches individuais:
+As telas do sistema foram modeladas com base nas contribuições dos integrantes da equipe:
 
-- **Carlos** (`pi-carlos`): Desenvolvimento do **Mapa de Ocupação** semanal dos chalés e controle de status (`telas/tela_mapa.c` e `backend/chales.c`).
-- **João** (`pi-joao`): Desenvolvimento do **Painel da Recepção** e máquina de estados para navegação de telas (`telas/tela_recepcao.c`).
-- **Rayane** (`pi-rayane`): Desenvolvimento da **Autenticação (Login)** e do módulo de **Auditoria de Operações** (`telas/tela_login.c`, `telas/tela_auditoria.c` e `backend/auditoria.c`).
-- **Enzo** (`pi-enzo`): Integração da arquitetura, estruturação modular Front/Back em C, automação com `Makefile` e documentação técnica.
+- **Rayane** (`pi-rayane`): Desenvolveu a **Tela de Autenticação (Login)** e a tela do **Relatório de Auditoria** de operações com paginação e busca.
+- **João** (`pi-joao`): Desenvolveu a **Tela do Painel da Recepção**, resumo do dia (check-ins, check-outs, chalés livres) e a máquina de estados de navegação.
+- **Carlos** (`pi-carlos`): Desenvolveu a **Tela do Mapa de Ocupação** semanal dos chalés (CH-01 a CH-04) com navegação de semanas e controle de status.
+- **Enzo** (`pi-enzo`): Desenvolveu a **Interface Visual (Front-end Web)** que dá vida a todas essas telas no navegador, o servidor de integração de dados e a arquitetura geral do projeto.
 
-> **Nota:** Os arquivos originais enviados nas branches individuais estão preservados na pasta [`originais/`](originais/) para histórico e referência do professor.
+> **Histórico:** Os códigos originais desenvolvidos em C nas branches individuais estão preservados na pasta [`originais/`](originais/).
 
 ---
 
-## 📁 Arquitetura do Projeto
+## 📁 Estrutura do Projeto
 
 ```text
 Projeto-Integrador/
-├── Makefile                     # Script de compilação automatizada (macOS, Linux e Windows)
-├── README.md                    # Documentação do projeto
-├── .gitignore                   # Arquivos ignorados pelo Git
-├── main.c                       # Ponto de entrada do sistema
+├── server.js                # Servidor Back-end com API REST (Node.js)
+├── server.py                # Servidor alternativo em Python
+├── package.json             # Scripts de inicialização (npm start)
+├── iniciar.sh               # Script de 1 clique para iniciar no terminal
+├── data/
+│   └── database.json        # Banco de dados persistente compartilhado
 │
-├── telas/                       # FRONT-END (Camada de Apresentação e Telas de Console)
-│   ├── tela_login.c / .h        # Tela de Autenticação (Rayane)
-│   ├── tela_recepcao.c / .h     # Painel principal e máquina de estados (João)
-│   ├── tela_mapa.c / .h         # Visualização em tabela ASCII do mapa de ocupação (Carlos)
-│   ├── tela_auditoria.c / .h    # Relatório de auditoria com paginação e busca (Rayane)
-│   └── tela_operacoes.c / .h    # Subtelas de Check-in, Check-out, Reservas, Hóspedes e Consumo
+├── front-end/               # 🌐 INTERFACE VISUAL (Front-end Web)
+│   ├── index.html           # Redirecionador automático para o login
+│   ├── html/                # Telas (login, recepção, mapa, auditoria, etc.)
+│   ├── css/                 # Estilos visuais (style.css)
+│   └── js/                  # Lógica das telas (shell.js, store.js, etc.)
 │
-├── backend/                     # BACK-END (Camada de Lógica de Negócio, Estruturas e Dados)
-│   ├── auth.c / .h              # Verificação de credenciais e controle de perfis
-│   ├── chales.c / .h            # Dados, tipos e atualização de status dos chalés (Carlos)
-│   ├── reservas.c / .h          # Gerenciamento de reservas, check-in e check-out
-│   ├── hospedes.c / .h          # Cadastro e consulta de hóspedes
-│   ├── consumo.c / .h           # Lançamento e extrato de consumo dos chalés
-│   └── auditoria.c / .h         # Registro e armazenamento de logs de auditoria (Rayane)
+├── backend/                 # ⚙️ BACK-END EM C (Lógica, dados e regras)
+│   ├── auth.c / .h          # Autenticação e perfis de acesso
+│   ├── chales.c / .h        # Chalés e controle de ocupação (Carlos)
+│   ├── reservas.c / .h      # Gestão de reservas, check-in e check-out
+│   ├── hospedes.c / .h      # Cadastro de hóspedes
+│   ├── consumo.c / .h       # Lançamento de consumo
+│   └── auditoria.c / .h     # Armazenamento de logs (Rayane)
 │
-├── common/                      # UTILITÁRIOS GLOBAIS
-│   └── common.c / .h            # Limpeza de tela (cross-platform), leitura segura e datas
+├── telas/                   # 🖥️ TELAS EM C (Front-end de console)
+│   ├── tela_login.c / .h    # Tela de login em C (Rayane)
+│   ├── tela_recepcao.c / .h # Painel de recepção em C (João)
+│   ├── tela_mapa.c / .h     # Mapa semanal em C (Carlos)
+│   ├── tela_auditoria.c / .h# Relatório de auditoria em C (Rayane)
+│   └── tela_operacoes.c / .h# Operações do hotel em C
 │
-└── originais/                   # CÓDIGOS ORIGINAIS DAS BRANCHES
-    ├── Gerenciador-chales.c     # Carlos (pi-carlos)
-    ├── auditoriadoadm.c         # Rayane (pi-rayane)
-    ├── paginainicial.c          # Rayane (pi-rayane)
-    └── painelRecep.c            # João (pi-joao)
+├── common/                  # Utilitários compartilhados
+├── main.c                   # Ponto de entrada da versão em C
+├── Makefile                 # Compilação da versão em C
+└── README.md
 ```
 
 ---
 
-## 🚀 Como Compilar e Executar
+## 🚀 Como Executar o Front-end Visual (Recomendado)
 
-### Opção 1: Usando Make (Recomendado)
-
-Na pasta raiz do projeto, execute:
+Para ver e usar o sistema com a **interface visual completa** no seu navegador, basta abrir o terminal na pasta do projeto e rodar **um único comando**:
 
 ```bash
-make
+npm start
 ```
 
-Para rodar o executável gerado:
+*(Ou execute: `./iniciar.sh` ou `python3 server.py`)*
+
+### O que acontece:
+1. O servidor inicia na porta `3000`.
+2. **O seu navegador abre automaticamente** na tela de Login do Recanto Bosque!
+3. Todas as telas (Painel do João, Mapa do Carlos, Login e Auditoria da Rayane) funcionam de forma interativa e visual.
+4. As alterações ficam salvas no arquivo `data/database.json`.
+
+---
+
+## 💻 Como Executar a Versão em C (Terminal / Console)
+
+Se você ou o professor quiserem rodar a versão do sistema direto no terminal em C:
 
 ```bash
 make run
 ```
 
-Para limpar os arquivos de compilação:
+Para compilar sem rodar:
+```bash
+make
+```
+
+Para limpar arquivos compilados:
 ```bash
 make clean
 ```
 
 ---
 
-### Opção 2: Compilação Direta com GCC / Clang
-
-Caso não utilize o comando `make`:
-
-- **Linux / macOS:**
-  ```bash
-  gcc -Wall -Wextra -std=c99 -I. -Icommon -Ibackend -Itelas main.c common/*.c backend/*.c telas/*.c -o sistema_recanto
-  ./sistema_recanto
-  ```
-
-- **Windows (MinGW):**
-  ```cmd
-  gcc -Wall -Wextra -std=c99 -I. -Icommon -Ibackend -Itelas main.c common/*.c backend/*.c telas/*.c -o sistema_recanto.exe
-  sistema_recanto.exe
-  ```
-
----
-
 ## 🔑 Credenciais para Teste
 
-| Usuário | Senha | Perfil | Módulos e Telas Acessadas |
+As mesmas credenciais funcionam tanto no Front-end visual quanto na versão em C:
+
+| Usuário | Senha | Perfil | Módulos e Telas |
 |---|---|---|---|
-| `marcos.recepcao` | `123456` | Recepção | Painel Geral, Reservas, Check-in/out, Consumo, Mapa de Chalés |
+| `marcos.recepcao` | `123456` | Recepção | Painel Geral, Reservas, Check-in/out, Consumo, Mapa |
 | `ana.governanca` | `123456` | Governança | Status dos chalés, limpeza, manutenção e Mapa |
-| `diretoria.admin` | `123456` | Administrador | Relatório de Auditoria completo, Mapa e Painel Geral |
+| `diretoria.admin` | `123456` | Administrador | Relatório de Auditoria completo, Mapa e Painel |
