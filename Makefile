@@ -5,18 +5,8 @@ OBJDIR = obj
 BINDIR = bin
 
 SRCS = main.c \
-       backend/common.c \
-       backend/chales.c \
-       backend/reservas.c \
-       backend/hospedes.c \
-       backend/consumo.c \
-       backend/auditoria.c \
-       backend/auth.c \
-       telas/tela_login.c \
-       telas/tela_recepcao.c \
-       telas/tela_mapa.c \
-       telas/tela_auditoria.c \
-       telas/tela_operacoes.c
+       backend/backend.c \
+       telas/telas.c
 
 OBJS = $(patsubst %.c, $(OBJDIR)/%.o, $(SRCS))
 
@@ -50,4 +40,9 @@ clean:
 	@$(RM) $(TARGET)
 	@echo ">>> Arquivos compilados limpos com sucesso."
 
-.PHONY: all run clean
+test:
+	@$(call MKDIR, $(OBJDIR))
+	$(CC) $(CFLAGS) tests/test_regras.c backend/backend.c -o $(OBJDIR)/test_regras
+	./$(OBJDIR)/test_regras
+
+.PHONY: all run clean test

@@ -1,14 +1,5 @@
-#include "backend/common.h"
-#include "backend/chales.h"
-#include "backend/reservas.h"
-#include "backend/hospedes.h"
-#include "backend/consumo.h"
-#include "backend/auditoria.h"
-#include "telas/tela_login.h"
-#include "telas/tela_recepcao.h"
-#include "telas/tela_mapa.h"
-#include "telas/tela_auditoria.h"
-#include "telas/tela_operacoes.h"
+#include "backend/backend.h"
+#include "telas/telas.h"
 
 int main(void) {
     // Inicialização dos dados e regras do Back-end

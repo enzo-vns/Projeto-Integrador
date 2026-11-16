@@ -1,107 +1,32 @@
-# Recanto Bosque — Sistema de Gestão Hoteleira (Back-end em C)
+# Recanto do Bosque — sistema de chalés em C
 
-Repositório do **Projeto Integrador**, com foco no desenvolvimento do **Back-end em Linguagem C** (Console / Terminal) para gerenciamento completo das operações do hotel/pousada **Recanto Bosque**.
+Aplicação de terminal para o Projeto Integrador. Os dados são mantidos em memória e são perdidos ao encerrar o programa, conforme a etapa descrita no documento do projeto.
 
-O sistema contempla todo o fluxo de atendimento hoteleiro: autenticação de funcionários com controle de perfis de acesso, mapa visual semanal de chalés, gestão de reservas, realização de check-in e check-out, lançamento de consumo e relatório de auditoria de operações.
+## Organização
 
-> 📌 **Escopo do Semestre:** Este semestre é dedicado exclusivamente ao desenvolvimento e integração do **Back-end e interface de console em C**. A camada de Front-end Web externa será desenvolvida na etapa seguinte do projeto.
+O arquivo `backend/backend.c` reúne as regras e os dados do sistema; `backend/backend.h` contém as estruturas e declarações usadas pelos demais arquivos. Os arquivos `telas/telas.c` e `telas/telas.h` concentram os menus do terminal.
 
----
+## Como executar
 
-## 👥 Equipe e Atribuições
+Na pasta do projeto, execute `make run`. Para compilar sem executar, use `make`; para testar as regras, use `make test`.
 
-O projeto consolida as contribuições desenvolvidas pelos integrantes da equipe em suas respectivas branches:
+Usuários de demonstração: `marcos.recepcao`, `diretoria.admin` e `ana.governanca`, todos com senha `123456`. São credenciais fixas para testes, não para produção.
 
-- **Carlos** (`pi-carlos`):
-  - Modelagem e controle de status dos chalés (`backend/chales.c`).
-  - Tela do mapa semanal de ocupação em tabela ASCII com avanço/retrocesso de semanas (`telas/tela_mapa.c`).
-- **João** (`pi-joao`):
-  - Painel principal do operador da recepção (`telas/tela_recepcao.c`).
-  - Máquina de estados para navegação e resumo diário de atendimentos.
-- **Rayane** (`pi-rayane`):
-  - Módulo de autenticação de funcionários (`backend/auth.c` e `telas/tela_login.c`).
-  - Módulo e relatório de auditoria de operações críticas com paginação e filtro por usuário (`backend/auditoria.c` e `telas/tela_auditoria.c`).
-- **Enzo** (`pi-enzo`):
-  - Integração geral dos módulos em C, estruturação da arquitetura em camadas (`backend/` e `telas/`).
-  - Módulos de reservas, hóspedes e consumo (`backend/reservas.c`, `backend/hospedes.c`, `backend/consumo.c`, `telas/tela_operacoes.c`).
-  - Automação de compilação multiplataforma com `Makefile` e documentação técnica.
+## Funcionalidades
 
----
+- Consulta de disponibilidade por intervalo de datas, com saída exclusiva e bloqueio de reservas sobrepostas.
+- Cadastro, consulta por documento e atualização de hóspedes; reservas vinculadas a hóspedes cadastrados.
+- Criação, alteração e cancelamento de reservas; registro de horário de entrada e saída.
+- Lançamento de consumo em estadias ativas e fechamento com diárias, consumo e confirmação de pagamento.
+- Mapa de duas semanas, atualização de limpeza e manutenção e trilha de auditoria em memória.
+- Cadastro e atualização de chalés e relatório de ocupação e pagamentos, disponíveis ao administrador. A auditoria também é restrita ao administrador.
 
-## 📁 Estrutura do Projeto
+As quatro unidades iniciais têm tarifa zero, pois o documento não informa preços. O administrador deve cadastrar as tarifas reais antes de efetuar cobranças. A tarifa de cada reserva é fixada quando ela é criada ou alterada. O relatório usa diárias reservadas para a taxa de ocupação, e pagamentos registrados na data do check-out para faturamento; o fim do período é exclusivo.
 
-```text
-Projeto-Integrador/
-├── Makefile                     # Compilação e execução automatizada
-├── README.md                    # Documentação oficial do projeto
-├── .gitignore                   # Arquivos temporários e executáveis ignorados
-├── main.c                       # Ponto de entrada do sistema
-│
-├── backend/                     # REGRAS DE NEGÓCIO, ESTRUTURAS E DADOS EM C
-│   ├── auth.c / .h              # Verificação de credenciais e perfis (Rayane)
-│   ├── chales.c / .h            # Controle de chalés e status (Carlos)
-│   ├── reservas.c / .h          # Gerenciamento de reservas, check-in e check-out
-│   ├── hospedes.c / .h          # Cadastro e consulta de hóspedes
-│   ├── consumo.c / .h           # Lançamento e cálculo de consumo dos chalés
-│   ├── auditoria.c / .h         # Armazenamento e log de operações críticas (Rayane)
-│   └── common.c / .h            # Utilitários (limpar tela, leitura segura e datas)
-│
-└── telas/                       # INTERFACE COM O USUÁRIO (Telas de Console / Terminal)
-    ├── tela_login.c / .h        # Tela de Login de funcionários (Rayane)
-    ├── tela_recepcao.c / .h     # Painel principal e máquina de estados (João)
-    ├── tela_mapa.c / .h         # Tela do mapa semanal de chalés (Carlos)
-    ├── tela_auditoria.c / .h    # Tela do relatório de auditoria paginado (Rayane)
-    └── tela_operacoes.c / .h    # Subtelas de Check-in, Check-out, Reservas, etc.
-```
+## Limitações da versão
 
----
-
-## 🚀 Como Compilar e Executar
-
-### Opção 1: Usando Make (Recomendado)
-
-No terminal, na pasta raiz do projeto, execute:
-
-```bash
-make run
-```
-
-Para apenas compilar:
-```bash
-make
-```
-
-Para limpar os arquivos de compilação:
-```bash
-make clean
-```
-
----
-
-### Opção 2: Compilação Direta via GCC / Clang
-
-Se não possuir o comando `make` instalado:
-
-- **No macOS / Linux:**
-  ```bash
-  gcc -Wall -Wextra -std=c99 -I. -Icommon -Ibackend -Itelas main.c common/*.c backend/*.c telas/*.c -o sistema_recanto
-  ./sistema_recanto
-  ```
-
-- **No Windows (MinGW / Prompt de Comando):**
-  ```cmd
-  gcc -Wall -Wextra -std=c99 -I. -Icommon -Ibackend -Itelas main.c common/*.c backend/*.c telas/*.c -o sistema_recanto.exe
-  sistema_recanto.exe
-  ```
-
----
-
-## 🔑 Credenciais para Teste
-
-O sistema conta com três perfis de usuário pré-configurados:
-
-| Usuário | Senha | Perfil | Telas e Acessos Permitidos |
-|---|---|---|---|
-| `marcos.recepcao` | `123456` | Recepção | Painel da Recepção, Mapa do Carlos, Check-in, Check-out, Reservas, Consumo, Hóspedes |
-| `ana.governanca` | `123456` | Governança | Gerenciamento de limpeza/manutenção de chalés e Mapa |
-| `diretoria.admin` | `123456` | Administrador | Relatório de Auditoria da Rayane e Painel da Recepção |
+- As credenciais permanecem fixas no código e ainda não usam hash e salt (RNF-03); não usar em produção. O programa não possui gestão de usuários ou armazenamento seguro de credenciais.
+- A retenção e anonimização dos dados (RNF-05) ainda não foram implementadas. Os dados são voláteis e não sobrevivem à execução.
+- Disponibilidade de 99%, SLA de correção e escalabilidade dependem também de infraestrutura e processos; não são garantidos por esta aplicação. O tempo de consulta para 10.000 reservas ainda precisa de medição formal. O documento apresenta metas divergentes para esse tempo (2 s no título e 100 ms na descrição).
+- Os registros são limitados por vetores; não há persistência, integração de pagamento, autenticação forte nem definição de indisponibilidade futura por período de manutenção. O pagamento é apenas registrado em memória.
+- O relatório apresenta ocupação prevista com base em reservas, não comprovação de presença. Datas de estadia usadas no cálculo são as previstas; não há ajuste automático por saída antecipada ou tardia.
