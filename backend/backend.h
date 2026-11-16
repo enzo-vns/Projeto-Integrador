@@ -9,9 +9,9 @@
 
 // Comando de limpar tela dependendo do sistema operacional
 #ifdef _WIN32
-  #define LIMPAR_TELA() system("cls")
+#define LIMPAR_TELA() system("cls")
 #else
-  #define LIMPAR_TELA() system("clear")
+#define LIMPAR_TELA() system("clear")
 #endif
 
 typedef enum {
@@ -32,12 +32,7 @@ typedef enum {
 } EstadoSistema;
 
 // Perfis de acesso dos usuários
-typedef enum {
-    PERFIL_NENHUM = 0,
-    PERFIL_RECEPCAO,
-    PERFIL_GOVERNANCA,
-    PERFIL_ADMIN
-} PerfilUsuario;
+typedef enum { PERFIL_NENHUM = 0, PERFIL_RECEPCAO, PERFIL_GOVERNANCA, PERFIL_ADMIN } PerfilUsuario;
 
 // Informações da sessão autenticada
 typedef struct {
@@ -53,19 +48,13 @@ void pausar_sistema(void);
 void obter_data_hora_atual(char *buffer, size_t tamanho);
 
 /* CHALES */
-#define NUM_CHALES     4
-#define DIAS_VISIVEIS  7
-#define TOTAL_DIAS     14
+#define NUM_CHALES 4
+#define DIAS_VISIVEIS 7
+#define TOTAL_DIAS 14
 #define MAX_CHALES 100
 
 // Estados dos chalés (desenvolvido por Carlos)
-typedef enum {
-    LIVRE,
-    RESERVADO,
-    OCUPADO,
-    LIMPEZA,
-    MANUTENCAO
-} StatusChale;
+typedef enum { LIVRE, RESERVADO, OCUPADO, LIMPEZA, MANUTENCAO } StatusChale;
 
 // Estrutura do chalé com controle temporal de ocupação (Carlos)
 typedef struct {
@@ -78,7 +67,7 @@ typedef struct {
 
 // Funções de inicialização e consulta
 void inicializar_chales(void);
-Chale* obter_chales(void);
+Chale *obter_chales(void);
 int obter_total_chales(void);
 int cadastrar_chale(const char *id, const char *tipo, int capacidade, double tarifa);
 int contar_chales_livres_hoje(void);
@@ -89,7 +78,7 @@ const char *nome_status(StatusChale s);
 
 // Atualização de status
 void atualizar_status_chale(const char *id_chale, int dia_offset, StatusChale novo_status);
-Chale* buscar_chale_por_id(const char *id_chale);
+Chale *buscar_chale_por_id(const char *id_chale);
 
 /* HOSPEDES */
 #define MAX_HOSPEDES 50
@@ -104,10 +93,10 @@ typedef struct {
 } Hospede;
 
 void inicializar_hospedes(void);
-Hospede* obter_hospedes(void);
+Hospede *obter_hospedes(void);
 int obter_total_hospedes(void);
 int cadastrar_hospede(const char *nome, const char *documento, const char *telefone);
-Hospede* buscar_hospede_por_id(int id);
+Hospede *buscar_hospede_por_id(int id);
 
 /* RESERVAS */
 #define MAX_RESERVAS 10000
@@ -149,7 +138,7 @@ typedef struct {
 void inicializar_consumo(void);
 int lancar_consumo(int reserva_id, const char *item, float valor);
 double total_consumo(int reserva_id);
-ItemConsumo* obter_historico_consumo(void);
+ItemConsumo *obter_historico_consumo(void);
 int obter_total_consumos(void);
 
 /* AUDITORIA */
@@ -170,7 +159,7 @@ void inicializar_auditoria(void);
 void adicionar_log_auditoria(const char *usuario, const char *acao, const char *detalhes);
 
 // Retorna o ponteiro para o array de logs
-LogAuditoria* obter_logs_auditoria(void);
+LogAuditoria *obter_logs_auditoria(void);
 
 // Retorna a quantidade total de registros gravados
 int obter_total_logs_auditoria(void);

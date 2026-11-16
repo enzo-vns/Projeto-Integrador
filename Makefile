@@ -28,7 +28,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $^ -o $@
 	@echo "\n>>> Sistema compilado com sucesso: ./$@\n"
 
-$(OBJDIR)/%.o: %.c
+$(OBJDIR)/%.o: %.c backend/backend.h telas/telas.h
 	@$(call MKDIR, $(dir $@))
 	$(CC) $(CFLAGS) -c $< -o $@
 
