@@ -10,11 +10,11 @@ int exibir_tela_login(SessaoUsuario *sessao);
 
 /* MAPA */
 // Exibe o mapa de ocupação semanal dos chalés (desenvolvido originalmente por Carlos)
-EstadoSistema exibir_tela_mapa(void);
+EstadoSistema exibir_tela_mapa(const SessaoUsuario *sessao);
 
 /* AUDITORIA */
 // Exibe o relatório interativo de auditoria (desenvolvido originalmente por Rayane)
-EstadoSistema exibir_tela_auditoria(void);
+EstadoSistema exibir_tela_auditoria(const SessaoUsuario *sessao);
 
 /* OPERACOES */
 // Subtelas do sistema hoteleiro (Front-end de console)

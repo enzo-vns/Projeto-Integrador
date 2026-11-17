@@ -115,9 +115,11 @@ int contar_checkins_pendentes(void);
 int contar_checkouts_pendentes(void);
 int data_numero(const char *data);
 int periodo_valido(const char *entrada, const char *saida);
+int periodo_reserva_valido(const char *entrada, const char *saida);
 int chale_disponivel(const char *chale, const char *entrada, const char *saida, int ignorar_id);
 int criar_reserva(int hospede_id, const char *chale, const char *checkin, const char *checkout);
-int alterar_reserva(int id, int hospede_id, const char *chale, const char *checkin, const char *checkout);
+int alterar_reserva(int id, int hospede_id, const char *chale, const char *checkin,
+                    const char *checkout);
 int efetuar_checkin(int id_reserva);
 int efetuar_checkout(int id_reserva);
 int cancelar_reserva(int id_reserva);
@@ -152,7 +154,7 @@ typedef struct {
     char detalhes[80];
 } LogAuditoria;
 
-// Inicializa a base de auditoria com os registros pré-carregados
+// Inicializa a base de auditoria em memoria
 void inicializar_auditoria(void);
 
 // Registra uma nova operação crítica na auditoria

@@ -46,7 +46,7 @@ int main(void) {
                 if (op == 1) {
                     exibir_tela_governanca(&sessao);
                 } else if (op == 2) {
-                    exibir_tela_mapa();
+                    exibir_tela_mapa(&sessao);
                 }
             }
             break;

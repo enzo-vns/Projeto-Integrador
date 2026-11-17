@@ -301,9 +301,19 @@ int periodo_valido(const char *a, const char *b) {
     int x = data_numero(a), y = data_numero(b);
     return x >= 0 && y > x;
 }
+int periodo_reserva_valido(const char *entrada, const char *saida) {
+    time_t agora = time(NULL);
+    struct tm *hoje = localtime(&agora);
+    char data_atual[12];
+    if (!hoje || !strftime(data_atual, sizeof(data_atual), "%d/%m/%Y", hoje)) {
+        return 0;
+    }
+    return periodo_valido(entrada, saida) && data_numero(entrada) >= data_numero(data_atual);
+}
 int chale_disponivel(const char *id, const char *a, const char *b, int ignorar) {
     Chale *c = buscar_chale_por_id(id);
-    if (!c || !periodo_valido(a, b) || c->status[0] == MANUTENCAO || c->status[0] == LIMPEZA) {
+    if (!c || !periodo_reserva_valido(a, b) || c->status[0] == MANUTENCAO ||
+        c->status[0] == LIMPEZA) {
         return 0;
     }
     for (int i = 0; i < g_total_reservas; i++) {
@@ -322,7 +332,7 @@ int chale_disponivel(const char *id, const char *a, const char *b, int ignorar) 
 int criar_reserva(int hospede_id, const char *id, const char *a, const char *b) {
     Hospede *h = buscar_hospede_por_id(hospede_id);
     Chale *c = buscar_chale_por_id(id);
-    if (!h || !c || !periodo_valido(a, b)) {
+    if (!h || !c || !periodo_reserva_valido(a, b)) {
         return -1;
     }
     if (!chale_disponivel(id, a, b, 0)) {
@@ -356,7 +366,7 @@ int alterar_reserva(int id, int hid, const char *c, const char *a, const char *b
     Hospede *h = buscar_hospede_por_id(hid);
     Chale *ch = buscar_chale_por_id(c);
     if (!r || !h || !ch || r->checkedIn || strcmp(r->status, "confirmada") ||
-        !periodo_valido(a, b)) {
+        !periodo_reserva_valido(a, b)) {
         return -1;
     }
     if (!chale_disponivel(c, a, b, id)) {
@@ -492,23 +502,7 @@ void inicializar_auditoria(void) {
         return;
     }
 
-    // Registros iniciais baseados nos dados originais da Rayane
-    strcpy(g_logs[0].datahora, "20/09/2026 18:36");
-    strcpy(g_logs[0].usuario, "ana.gov");
-    strcpy(g_logs[0].acao, "STATUS_CHALE");
-    strcpy(g_logs[0].detalhes, "CH-02 alterado para LIMPEZA");
-
-    strcpy(g_logs[1].datahora, "20/09/2026 21:00");
-    strcpy(g_logs[1].usuario, "marcos.rec");
-    strcpy(g_logs[1].acao, "CHECKIN_REALIZADO");
-    strcpy(g_logs[1].detalhes, "Reserva #87 (Hospede: Carlos)");
-
-    strcpy(g_logs[2].datahora, "20/09/2026 21:43");
-    strcpy(g_logs[2].usuario, "marcos.rec");
-    strcpy(g_logs[2].acao, "CANCELA_RESERVA");
-    strcpy(g_logs[2].detalhes, "Reserva #97 - Motivo: Desistencia");
-
-    g_quantidade_logs = 3;
+    g_quantidade_logs = 0;
     g_inicializado_auditoria = 1;
 }
 
@@ -552,8 +546,7 @@ int autenticar_usuario(const char *usuario, const char *senha, SessaoUsuario *se
         return 1;
     }
 
-    if (strcmp(usuario, "diretoria.admin") == 0 &&
-        (strcmp(senha, "123456") == 0 || strcmp(senha, "admin") == 0)) {
+    if (strcmp(usuario, "diretoria.admin") == 0 && strcmp(senha, "123456") == 0) {
         strcpy(sessao->usuario, "diretoria");
         strcpy(sessao->nome, "Diretoria (Administrador)");
         sessao->perfil = PERFIL_ADMIN;

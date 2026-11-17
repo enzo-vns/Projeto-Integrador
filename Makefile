@@ -42,7 +42,7 @@ clean:
 
 test:
 	@$(call MKDIR, $(OBJDIR))
-	$(CC) $(CFLAGS) tests/test_regras.c backend/backend.c -o $(OBJDIR)/test_regras
+	$(CC) $(CFLAGS) tests/test_regras.c backend/backend.c telas/telas.c -o $(OBJDIR)/test_regras
 	./$(OBJDIR)/test_regras
 
 .PHONY: all run clean test
