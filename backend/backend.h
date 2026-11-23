@@ -51,7 +51,7 @@ void pausar_sistema(void);
 void obter_data_hora_atual(char *buffer, size_t tamanho);
 
 /* CHALES */
-#define NUM_CHALES 4
+#define NUM_CHALES 8
 #define DIAS_VISIVEIS 7
 #define TOTAL_DIAS 14
 #define MAX_CHALES 100
@@ -115,6 +115,7 @@ typedef struct {
     double tarifa, total_pago;
 } Reserva;
 void inicializar_reservas(void);
+int carregar_reservas_exemplo(void);
 Reserva *obter_reservas(void);
 int obter_total_reservas(void);
 int contar_checkins_pendentes(void);

@@ -18,14 +18,14 @@ No macOS, a compilação usa CommonCrypto. Em Linux e Windows, requer cabeçalho
 
 - Consulta de disponibilidade por intervalo de datas, com saída exclusiva, bloqueio de reservas sobrepostas e entrada não anterior ao dia atual.
 - Listas de hóspedes exibem apenas ID e nome, com seleção pelo ID. Chalés e reservas são escolhidos em listas numeradas.
-- Cadastro, consulta por documento e atualização de hóspedes; reservas vinculadas a hóspedes cadastrados. O administrador pode excluir hóspedes sem reservas, chalés sem reservas e reservas canceladas sem check-in.
+- Cadastro, consulta por ID ou documento e atualização de hóspedes; reservas vinculadas a hóspedes cadastrados. O administrador pode excluir hóspedes sem reservas, chalés sem reservas e reservas canceladas sem check-in.
 - Gestão de usuários em memória pelo administrador, protegendo a própria conta e o último administrador contra exclusão.
 - Criação, alteração e cancelamento de reservas; registro de horário de entrada e saída.
 - Lançamento de consumo em estadias ativas e fechamento com diárias, consumo e confirmação de pagamento.
 - Mapa mensal com navegação entre meses, atualização de limpeza e manutenção e trilha de auditoria em memória.
 - Cadastro e atualização de chalés com opções de tipo Standard, Família ou Luxo, e relatório de ocupação e pagamentos, disponíveis ao administrador. A auditoria também é restrita ao administrador.
 
-As quatro unidades iniciais têm tarifa zero, pois o documento não informa preços. O administrador deve cadastrar as tarifas reais antes de efetuar cobranças. A tarifa de cada reserva é fixada quando ela é criada ou alterada. O check-in só é aceito entre a data prevista de entrada e o dia anterior à saída prevista. O relatório calcula a ocupação a partir das datas reais de check-in e check-out e usa pagamentos registrados na data do check-out para faturamento; o fim do período é exclusivo. Uma entrada e saída no mesmo dia contam como um dia ocupado.
+O sistema inicia com 10 hóspedes, 8 chalés e 12 reservas de demonstração, sendo duas estadias iniciadas e com consumos de exemplo. As datas são relativas ao dia de abertura. Os nomes, documentos, capacidades e tarifas são dados fictícios usados apenas para testes; o administrador deve ajustá-los antes de qualquer uso real. A tarifa de cada reserva é fixada quando ela é criada ou alterada. O check-in só é aceito entre a data prevista de entrada e o dia anterior à saída prevista. O relatório calcula a ocupação a partir das datas reais de check-in e check-out e usa pagamentos registrados na data do check-out para faturamento; o fim do período é exclusivo. Uma entrada e saída no mesmo dia contam como um dia ocupado.
 
 ## Limitações da versão
 

@@ -816,25 +816,45 @@ static EstadoSistema operar_hospedes(const SessaoUsuario *s, int op) {
             printf("ID %d | %s\n", h[i].id, h[i].nome);
         }
     } else if (op == 2) {
-        char doc[20];
-        if (ler_documento(doc)) {
-            int achou = 0;
+        printf("[1] Buscar por ID [2] Buscar por CPF ou documento [0] Voltar: ");
+        int tipo_busca = ler_opcao_segura();
+        Hospede *encontrado = NULL;
+        if (tipo_busca == 0) {
+            return ESTADO_MENU_PRINCIPAL;
+        }
+        if (tipo_busca == 1) {
+            printf("ID do hospede: ");
+            int id = ler_opcao_segura();
+            encontrado = buscar_hospede_por_id(id);
+        } else if (tipo_busca == 2) {
+            char documento[20];
+            if (!ler_documento(documento)) {
+                pausar_sistema();
+                return ESTADO_MENU_PRINCIPAL;
+            }
             for (int i = 0; i < obter_total_hospedes(); i++) {
-                if (documentos_iguais(h[i].documento, doc)) {
-                    printf("%s | %s | %s | %s | %s\n", h[i].nome, h[i].documento, h[i].telefone,
-                           h[i].endereco, h[i].email);
-                    Reserva *r = obter_reservas();
-                    for (int j = 0; j < obter_total_reservas(); j++) {
-                        if (r[j].hospede_id == h[i].id) {
-                            printf("Chale %d | %s a %s | %s\n", numero_chale(r[j].chale),
-                                   r[j].checkin, r[j].checkout, r[j].status);
-                        }
-                    }
-                    achou = 1;
+                if (documentos_iguais(h[i].documento, documento)) {
+                    encontrado = &h[i];
+                    break;
                 }
             }
-            if (!achou) {
-                puts("Hospede nao localizado.");
+        } else {
+            puts("Opcao invalida.");
+            pausar_sistema();
+            return ESTADO_MENU_PRINCIPAL;
+        }
+        if (!encontrado) {
+            puts("Hospede nao localizado.");
+        } else {
+            printf("ID: %d\nNome: %s\nDocumento: %s\nTelefone: %s\nEndereco: %s\nE-mail: %s\n",
+                   encontrado->id, encontrado->nome, encontrado->documento, encontrado->telefone,
+                   encontrado->endereco, encontrado->email);
+            Reserva *reservas = obter_reservas();
+            for (int i = 0; i < obter_total_reservas(); i++) {
+                if (reservas[i].hospede_id == encontrado->id) {
+                    printf("Chale %d | %s a %s | %s\n", numero_chale(reservas[i].chale),
+                           reservas[i].checkin, reservas[i].checkout, reservas[i].status);
+                }
             }
         }
     } else if (op == 1 || op == 3) {

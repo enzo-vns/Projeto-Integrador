@@ -65,10 +65,10 @@ int main(void) {
     assert(buscar_chale_por_id("CH-01")->status[0] == LIMPEZA);
     assert(cancelar_reserva(b) == 1);
     assert(cancelar_reserva(b) == -1);
-    assert(cadastrar_chale("CH-05", "Familia", 4, 150));
-    assert(!cadastrar_chale("CH-05", "Familia", 4, 150));
-    assert(!cadastrar_chale("CH-06", "Familia", 4, NAN));
-    assert(!cadastrar_chale("CH-06", "Outro", 4, 150));
+    assert(cadastrar_chale("CH-90", "Familia", 4, 150));
+    assert(!cadastrar_chale("CH-90", "Familia", 4, 150));
+    assert(!cadastrar_chale("CH-91", "Familia", 4, NAN));
+    assert(!cadastrar_chale("CH-91", "Outro", 4, 150));
     assert(buscar_chale_por_id(NULL) == NULL);
     assert(cadastrar_hospede("Teste", "documento", NULL) == -1);
     assert(documentos_iguais("321.654.987-00", "32165498700"));
@@ -105,8 +105,8 @@ int main(void) {
     assert(!buscar_hospede_por_id(hospede_sem_reserva));
     assert(excluir_reserva(b));
     assert(!buscar_reserva_por_id(b));
-    assert(excluir_chale("CH-05"));
-    assert(!buscar_chale_por_id("CH-05"));
+    assert(excluir_chale("CH-90"));
+    assert(!buscar_chale_por_id("CH-90"));
     puts("Testes de regras aprovados.");
     return 0;
 }

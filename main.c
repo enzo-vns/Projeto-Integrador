@@ -8,6 +8,7 @@ int main(void) {
     inicializar_hospedes();
     inicializar_consumo();
     inicializar_auditoria();
+    carregar_reservas_exemplo();
 
     SessaoUsuario sessao;
 

@@ -103,11 +103,17 @@ void inicializar_chales(void) {
         return;
     }
 
+    /* Unidades e tarifas ficticias para exercitar o sistema. */
+    static const char *tipos[NUM_CHALES] = {
+        "Standard", "Standard", "Standard", "Standard", "Familia", "Familia", "Luxo", "Luxo"
+    };
+    static const int capacidades[NUM_CHALES] = {2, 2, 2, 2, 4, 5, 2, 3};
+    static const double tarifas[NUM_CHALES] = {150, 150, 170, 170, 220, 260, 300, 350};
     for (int i = 0; i < NUM_CHALES; i++) {
         snprintf(g_chales[i].id, sizeof(g_chales[i].id), "CH-%02d", i + 1);
-        strcpy(g_chales[i].tipo, "Standard");
-        g_chales[i].capacidade = 2;
-        g_chales[i].tarifa = 0.0; /* Informar tarifa real no cadastro administrativo. */
+        snprintf(g_chales[i].tipo, sizeof(g_chales[i].tipo), "%s", tipos[i]);
+        g_chales[i].capacidade = capacidades[i];
+        g_chales[i].tarifa = tarifas[i];
         for (int d = 0; d < TOTAL_DIAS; d++) {
             g_chales[i].status[d] = LIVRE;
         }
@@ -210,7 +216,15 @@ void inicializar_hospedes(void) {
     g_hospedes[0] = (Hospede){1, "Carlos Andrade", "321.654.987-00", "(11) 98888-1122", "", ""};
     g_hospedes[1] = (Hospede){2, "Beatriz Lima", "112.334.556-70", "(11) 97777-3344", "", ""};
     g_hospedes[2] = (Hospede){3, "Renato Souza", "998.877.665-40", "(11) 96666-5566", "", ""};
-    g_total_hospedes = 3;
+    /* Documentos ficticios identificados como dados de teste. */
+    g_hospedes[3] = (Hospede){4, "Ana Ribeiro", "TESTE-004", "", "", ""};
+    g_hospedes[4] = (Hospede){5, "Mariana Silva", "TESTE-005", "", "", ""};
+    g_hospedes[5] = (Hospede){6, "Pedro Almeida", "TESTE-006", "", "", ""};
+    g_hospedes[6] = (Hospede){7, "Julia Santos", "TESTE-007", "", "", ""};
+    g_hospedes[7] = (Hospede){8, "Lucas Ferreira", "TESTE-008", "", "", ""};
+    g_hospedes[8] = (Hospede){9, "Camila Oliveira", "TESTE-009", "", "", ""};
+    g_hospedes[9] = (Hospede){10, "Rafael Costa", "TESTE-010", "", "", ""};
+    g_total_hospedes = 10;
 
     g_inicializado_hospedes = 1;
 }
@@ -411,6 +425,53 @@ Reserva *buscar_reserva_por_id(int id) {
     }
     return NULL;
 }
+/* Reservas ficticias relativas ao dia de abertura para demonstracao. */
+static int data_exemplo(int deslocamento, char resultado[12]) {
+    time_t agora = time(NULL);
+    struct tm *atual = localtime(&agora);
+    if (!atual) {
+        return 0;
+    }
+    struct tm data = *atual;
+    data.tm_hour = 12;
+    data.tm_min = 0;
+    data.tm_sec = 0;
+    data.tm_mday += deslocamento;
+    data.tm_isdst = -1;
+    if (mktime(&data) == (time_t)-1 || !strftime(resultado, 12, "%d/%m/%Y", &data)) {
+        return 0;
+    }
+    return 1;
+}
+
+int carregar_reservas_exemplo(void) {
+    if (obter_total_reservas() != 0) {
+        return 0;
+    }
+    static const int entradas[] = {0, 0, 0, 2, 4, 7, 10, 14, 20, 28, 36, 44};
+    static const int saidas[] =   {3, 4, 2, 5, 7, 10, 13, 17, 23, 31, 39, 47};
+    static const char *chales[] = {
+        "CH-01", "CH-02", "CH-03", "CH-04", "CH-05", "CH-06",
+        "CH-07", "CH-08", "CH-03", "CH-04", "CH-05", "CH-07"
+    };
+    int criadas = 0;
+    for (size_t i = 0; i < sizeof(entradas) / sizeof(entradas[0]); i++) {
+        char entrada[12], saida[12];
+        if (!data_exemplo(entradas[i], entrada) || !data_exemplo(saidas[i], saida)) {
+            break;
+        }
+        int reserva = criar_reserva((int)(i % 10) + 1, chales[i], entrada, saida);
+        if (reserva > 0) {
+            criadas++;
+            if (i < 2 && efetuar_checkin(reserva)) {
+                lancar_consumo(reserva, i == 0 ? "Cafe da manha (teste)" : "Agua (teste)",
+                               i == 0 ? 35.0f : 8.0f);
+            }
+        }
+    }
+    return criadas;
+}
+
 int alterar_reserva(int id, int hid, const char *c, const char *a, const char *b) {
     Reserva *r = buscar_reserva_por_id(id);
     Hospede *h = buscar_hospede_por_id(hid);
