@@ -1,6 +1,14 @@
 #include "telas.h"
 #include <math.h>
 
+#ifdef _WIN32
+#include <conio.h>
+#include <io.h>
+#else
+#include <termios.h>
+#include <unistd.h>
+#endif
+
 /* Identificacao visual dos chales, sem expor os codigos internos. */
 static int numero_chale(const char *codigo) {
     Chale *chales = obter_chales();
@@ -79,105 +87,136 @@ static const char *dia_semana_abrev(int wday) {
     return dias[wday % 7];
 }
 
-static void imprimir_cabecalho(time_t data_inicial) {
-    struct tm dia = *localtime(&data_inicial);
-
-    printf("================================================================================\n");
-    printf(" RECANTO BOSQUE | MAPA DE OCUPACAO DA SEMANA                                   \n");
-    printf("================================================================================\n\n");
-
-    printf("%-8s| %-9s", "Chale", "Tipo");
-    for (int i = 0; i < DIAS_VISIVEIS; i++) {
-        printf("| %s %02d/%02d ", dia_semana_abrev(dia.tm_wday), dia.tm_mday, dia.tm_mon + 1);
-        dia.tm_mday++;
-        mktime(&dia);
+static int numero_data_real(const char *data_hora) {
+    char data[11];
+    if (!data_hora || strlen(data_hora) < 10) {
+        return -1;
     }
-    printf("\n--------------------------------------------------------------------------------\n");
+    memcpy(data, data_hora, 10);
+    data[10] = '\0';
+    return data_numero(data);
 }
 
-static void imprimir_linha_chale(const Chale *c, int offset) {
-    printf("Chale %-2d| %-9s", numero_chale(c->id), c->tipo);
-    for (int i = 0; i < DIAS_VISIVEIS; i++) {
-        int idx = offset + i;
-        StatusChale s = idx == 0 ? c->status[0] : LIVRE;
-        time_t agora = time(NULL);
-        struct tm dia = *localtime(&agora);
-        dia.tm_mday += idx;
-        mktime(&dia);
-        char data[12];
-        strftime(data, sizeof(data), "%d/%m/%Y", &dia);
-        int numero = data_numero(data);
-        Reserva *r = obter_reservas();
-        if (s == LIVRE) {
-            for (int j = 0; j < obter_total_reservas(); j++) {
-                if (!strcmp(r[j].chale, c->id) && strcmp(r[j].status, "cancelada") &&
-                    !r[j].checkedOut && numero >= data_numero(r[j].checkin) &&
-                    numero < data_numero(r[j].checkout)) {
-                    s = r[j].checkedIn && !r[j].checkedOut ? OCUPADO : RESERVADO;
-                    break;
-                }
+static StatusChale status_no_dia(const Chale *chale, int dia, int hoje) {
+    if (dia == hoje && chale->status[0] != LIVRE) {
+        return chale->status[0];
+    }
+    Reserva *reservas = obter_reservas();
+    for (int i = 0; i < obter_total_reservas(); i++) {
+        Reserva *reserva = &reservas[i];
+        if (strcmp(reserva->chale, chale->id) != 0 ||
+            strcmp(reserva->status, "cancelada") == 0) {
+            continue;
+        }
+        if (reserva->checkedIn) {
+            int entrada = numero_data_real(reserva->entrada_real);
+            int saida = reserva->checkedOut ? numero_data_real(reserva->saida_real) : hoje + 1;
+            if (saida == entrada) {
+                saida++;
+            }
+            if (entrada >= 0 && dia >= entrada && dia < saida) {
+                return OCUPADO;
             }
         }
-        printf("| %s ", rotulo_status(s));
+        if (!reserva->checkedOut && dia >= hoje && dia >= data_numero(reserva->checkin) &&
+            dia < data_numero(reserva->checkout)) {
+            return RESERVADO;
+        }
     }
-    printf("\n");
+    return LIVRE;
 }
 
-static void imprimir_legenda(void) {
-    printf("--------------------------------------------------------------------------------\n");
-    printf("Legenda: [LIVR] Livre | [RESV] Reservado | [OCUP] Ocupado | [LIMP] Limpeza | [MANU] "
-           "Manutencao\n\n");
+static void imprimir_mes(const struct tm *mes, int hoje) {
+    struct tm primeiro = *mes;
+    primeiro.tm_mday = 1;
+    primeiro.tm_hour = 12;
+    primeiro.tm_min = 0;
+    primeiro.tm_sec = 0;
+    primeiro.tm_isdst = -1;
+    mktime(&primeiro);
+    struct tm proximo = primeiro;
+    proximo.tm_mon++;
+    mktime(&proximo);
+    proximo.tm_mday = 0;
+    mktime(&proximo);
+    int dias_no_mes = proximo.tm_mday;
+    char data[12];
+    strftime(data, sizeof(data), "%d/%m/%Y", &primeiro);
+    int primeiro_numero = data_numero(data);
+    Chale *chales = obter_chales();
+
+    printf("========================================================================\n");
+    printf(" RECANTO BOSQUE | MAPA DE OCUPACAO | MES %02d/%04d\n", primeiro.tm_mon + 1,
+           primeiro.tm_year + 1900);
+    printf("========================================================================\n");
+    for (int inicio = 1; inicio <= dias_no_mes; inicio += DIAS_VISIVEIS) {
+        int quantidade = dias_no_mes - inicio + 1;
+        if (quantidade > DIAS_VISIVEIS) {
+            quantidade = DIAS_VISIVEIS;
+        }
+        struct tm dia = primeiro;
+        dia.tm_mday = inicio;
+        mktime(&dia);
+        printf("\n%-8s| %-9s", "Chale", "Tipo");
+        for (int i = 0; i < quantidade; i++) {
+            printf("| %s %02d/%02d ", dia_semana_abrev(dia.tm_wday), dia.tm_mday, dia.tm_mon + 1);
+            dia.tm_mday++;
+            mktime(&dia);
+        }
+        putchar('\n');
+        for (int i = 0; i < obter_total_chales(); i++) {
+            printf("Chale %-2d| %-9s", numero_chale(chales[i].id), chales[i].tipo);
+            for (int d = 0; d < quantidade; d++) {
+                StatusChale estado = status_no_dia(&chales[i], primeiro_numero + inicio + d - 1, hoje);
+                printf("| %s ", rotulo_status(estado));
+            }
+            putchar('\n');
+        }
+    }
+    printf("\nLegenda: [LIVR] Livre | [RESV] Reservado | [OCUP] Ocupado | ");
+    printf("[LIMP] Limpeza | [MANU] Manutencao\n");
+    printf("Limpeza e manutencao mostram apenas o estado atual.\n\n");
 }
 
 EstadoSistema exibir_tela_mapa(const SessaoUsuario *sessao) {
     if (!permite_governanca(sessao)) {
         return ESTADO_MENU_PRINCIPAL;
     }
-    Chale *chales = obter_chales();
-    int total_chales = obter_total_chales();
-
-    time_t data_inicial = time(NULL);
-    int offset_dias = 0;
-    int opcao;
-
+    time_t agora = time(NULL);
+    struct tm *data_atual = localtime(&agora);
+    if (!data_atual) {
+        return ESTADO_MENU_PRINCIPAL;
+    }
+    struct tm mes_atual = *data_atual;
+    struct tm mes = mes_atual;
+    mes.tm_mday = 1;
+    mes.tm_hour = 12;
+    mes.tm_isdst = -1;
+    char data_hoje[12];
+    if (!strftime(data_hoje, sizeof(data_hoje), "%d/%m/%Y", data_atual)) {
+        return ESTADO_MENU_PRINCIPAL;
+    }
+    int hoje = data_numero(data_hoje);
     while (1) {
         LIMPAR_TELA();
-
-        imprimir_cabecalho(data_inicial);
-        for (int i = 0; i < total_chales; i++) {
-            imprimir_linha_chale(&chales[i], offset_dias);
-        }
-        imprimir_legenda();
-
-        printf("[1] Avancar 7 dias   [2] Voltar 7 dias   [0] Voltar ao Menu\n");
+        imprimir_mes(&mes, hoje);
+        printf("[1] Proximo mes   [2] Mes anterior   [3] Mes atual   [0] Voltar ao Menu\n");
         printf("Opcao > ");
-
-        opcao = ler_opcao_segura();
-
-        switch (opcao) {
-        case 1:
-            if (offset_dias + 7 < TOTAL_DIAS) {
-                offset_dias += 7;
-                data_inicial += 7 * 24 * 60 * 60;
-            } else {
-                printf("\nLimite maximo de dias alcancado.\n");
-                pausar_sistema();
-            }
-            break;
-        case 2:
-            if (offset_dias >= 7) {
-                offset_dias -= 7;
-                data_inicial -= 7 * 24 * 60 * 60;
-            } else {
-                printf("\nVoce ja esta visualizando a data de hoje.\n");
-                pausar_sistema();
-            }
-            break;
-        case 0:
+        int opcao = ler_opcao_segura();
+        if (opcao == 0) {
             return ESTADO_MENU_PRINCIPAL;
-        default:
-            printf("\nOpcao invalida! Pressione ENTER para continuar...");
-            getchar();
+        }
+        if (opcao == 3) {
+            mes = mes_atual;
+            mes.tm_mday = 1;
+        } else if ((opcao == 1 && (mes.tm_year + 1900 < 9999 || mes.tm_mon < 11)) ||
+                   (opcao == 2 && (mes.tm_year + 1900 > 1900 || mes.tm_mon > 0))) {
+            mes.tm_mon += opcao == 1 ? 1 : -1;
+            mes.tm_isdst = -1;
+            mktime(&mes);
+        } else {
+            puts("Opcao invalida ou limite de datas atingido.");
+            pausar_sistema();
         }
     }
 }
@@ -327,6 +366,90 @@ static int linha(const char *titulo, char *buf, size_t n) {
     }
     return *buf != '\0';
 }
+/* A mascara aceita oito digitos e monta a data sem exigir as barras. */
+static int ler_data(const char *titulo, char data[12]) {
+    char digitos[9] = {0};
+    int quantidade = 0;
+#ifdef _WIN32
+    int interativo = _isatty(_fileno(stdin));
+#else
+    int interativo = isatty(STDIN_FILENO);
+    struct termios original;
+    if (interativo) {
+        struct termios modo;
+        if (tcgetattr(STDIN_FILENO, &original) != 0) {
+            interativo = 0;
+        } else {
+            modo = original;
+            modo.c_lflag &= (tcflag_t)~(ICANON | ECHO | ISIG);
+            modo.c_cc[VMIN] = 1;
+            modo.c_cc[VTIME] = 0;
+            if (tcsetattr(STDIN_FILENO, TCSANOW, &modo) != 0) {
+                interativo = 0;
+            }
+        }
+    }
+#endif
+    if (!interativo) {
+        char entrada[32];
+        if (!linha(titulo, entrada, sizeof(entrada))) {
+            return 0;
+        }
+        size_t tamanho = strlen(entrada);
+        if (tamanho == 10 && entrada[2] == '/' && entrada[5] == '/') {
+            snprintf(data, 12, "%s", entrada);
+            return 1;
+        }
+        if (tamanho != 8 || strspn(entrada, "0123456789") != 8) {
+            return 0;
+        }
+        snprintf(data, 12, "%.2s/%.2s/%.4s", entrada, entrada + 2, entrada + 4);
+        return 1;
+    }
+
+    printf("%s", titulo);
+    fflush(stdout);
+    for (;;) {
+#ifdef _WIN32
+        int c = _getch();
+#else
+        int c = getchar();
+#endif
+        if (c == EOF || c == '\n' || c == '\r' || c == 3) {
+            if (c == 3) {
+                quantidade = 0;
+            }
+            break;
+        }
+        if (c == 8 || c == 127) {
+            if (quantidade > 0) {
+                if (quantidade == 2 || quantidade == 4) {
+                    printf("\b \b");
+                }
+                printf("\b \b");
+                digitos[--quantidade] = '\0';
+                fflush(stdout);
+            }
+        } else if (c >= '0' && c <= '9' && quantidade < 8) {
+            digitos[quantidade++] = (char)c;
+            putchar(c);
+            if (quantidade == 2 || quantidade == 4) {
+                putchar('/');
+            }
+            fflush(stdout);
+        }
+    }
+#ifndef _WIN32
+    tcsetattr(STDIN_FILENO, TCSANOW, &original);
+#endif
+    putchar('\n');
+    if (quantidade != 8) {
+        return 0;
+    }
+    snprintf(data, 12, "%.2s/%.2s/%.4s", digitos, digitos + 2, digitos + 4);
+    return 1;
+}
+
 static void logar(const SessaoUsuario *sessao, const char *acao, int registro) {
     char detalhes[80];
     if (strcmp(acao, "CADASTRO_HOSPEDE") == 0) {
@@ -346,19 +469,34 @@ static void logar(const SessaoUsuario *sessao, const char *acao, int registro) {
 }
 
 /* Os numeros exibidos sao apenas opcoes da lista atual. */
-static Reserva *selecionar_reserva(void) {
+static Reserva *selecionar_reserva(const char *titulo) {
     Reserva *reservas = obter_reservas();
     int total = obter_total_reservas();
+
+    printf("======================================================================\n");
+    printf(" RECANTO BOSQUE | %s\n", titulo);
+    printf("======================================================================\n\n");
+
     if (total == 0) {
         puts("Nenhuma reserva cadastrada nesta execucao.");
         return NULL;
     }
+
+    puts("Selecione a reserva desejada:\n");
     for (int i = 0; i < total; i++) {
-        printf("[%d] %s | Chale %d | %s a %s | %s\n", i + 1, reservas[i].hospede,
-               numero_chale(reservas[i].chale), reservas[i].checkin, reservas[i].checkout,
-               reservas[i].status);
+        Reserva *reserva = &reservas[i];
+        const char *situacao = reserva->status;
+        if (reserva->checkedOut) {
+            situacao = "Finalizada";
+        } else if (reserva->checkedIn) {
+            situacao = "Hospedado";
+        }
+        printf(" [%d] %s\n", i + 1, reserva->hospede);
+        printf("     Chale %d  |  %s ate %s  |  %s\n", numero_chale(reserva->chale),
+               reserva->checkin, reserva->checkout, situacao);
+        puts(" --------------------------------------------------------------------");
     }
-    printf("Escolha uma reserva pelo numero da lista (0 para voltar): ");
+    printf("\nDigite o numero da reserva ou 0 para voltar: ");
     int opcao = ler_opcao_segura();
     if (opcao == 0) {
         return NULL;
@@ -418,7 +556,7 @@ static int dados_reserva(int *id, char *chale, char *a, char *b) {
         return 0;
     }
     *id = h->id;
-    if (!linha("Entrada (DD/MM/AAAA): ", a, 12) || !linha("Saida (DD/MM/AAAA): ", b, 12) ||
+    if (!ler_data("Entrada (DD/MM/AAAA): ", a) || !ler_data("Saida (DD/MM/AAAA): ", b) ||
         !periodo_reserva_valido(a, b)) {
         puts("Periodo invalido: a entrada nao pode ser anterior a hoje e a saida deve ser "
              "posterior.");
@@ -447,8 +585,8 @@ EstadoSistema exibir_tela_disponibilidade(const SessaoUsuario *s) {
     char a[12], b[12];
     LIMPAR_TELA();
     puts("CONSULTA DE DISPONIBILIDADE");
-    if (!linha("Entrada (DD/MM/AAAA): ", a, sizeof(a)) ||
-        !linha("Saida (DD/MM/AAAA): ", b, sizeof(b)) || !periodo_reserva_valido(a, b)) {
+    if (!ler_data("Entrada (DD/MM/AAAA): ", a) ||
+        !ler_data("Saida (DD/MM/AAAA): ", b) || !periodo_reserva_valido(a, b)) {
         puts("Periodo invalido: a entrada nao pode ser anterior a hoje e a saida deve ser "
              "posterior.");
         pausar_sistema();
@@ -473,7 +611,7 @@ EstadoSistema exibir_tela_checkin(const SessaoUsuario *s) {
         return ESTADO_MENU_PRINCIPAL;
     }
     LIMPAR_TELA();
-    Reserva *reserva = selecionar_reserva();
+    Reserva *reserva = selecionar_reserva("REALIZAR CHECK-IN");
     if (!reserva) {
         pausar_sistema();
         return ESTADO_MENU_PRINCIPAL;
@@ -495,7 +633,7 @@ EstadoSistema exibir_tela_consumo(const SessaoUsuario *s) {
     char item[50];
     float valor;
     LIMPAR_TELA();
-    Reserva *reserva = selecionar_reserva();
+    Reserva *reserva = selecionar_reserva("LANCAR CONSUMO");
     if (!reserva) {
         pausar_sistema();
         return ESTADO_MENU_PRINCIPAL;
@@ -529,7 +667,7 @@ EstadoSistema exibir_tela_checkout(const SessaoUsuario *s) {
         return ESTADO_MENU_PRINCIPAL;
     }
     LIMPAR_TELA();
-    Reserva *r = selecionar_reserva();
+    Reserva *r = selecionar_reserva("REALIZAR CHECK-OUT");
     if (!r) {
         pausar_sistema();
         return ESTADO_MENU_PRINCIPAL;
@@ -570,7 +708,7 @@ EstadoSistema exibir_tela_alterar_cancelar(const SessaoUsuario *s) {
         return ESTADO_MENU_PRINCIPAL;
     }
     LIMPAR_TELA();
-    Reserva *reserva = selecionar_reserva();
+    Reserva *reserva = selecionar_reserva("ALTERAR OU CANCELAR RESERVA");
     if (!reserva) {
         pausar_sistema();
         return ESTADO_MENU_PRINCIPAL;
@@ -617,17 +755,16 @@ EstadoSistema exibir_tela_alterar_cancelar(const SessaoUsuario *s) {
     pausar_sistema();
     return ESTADO_MENU_PRINCIPAL;
 }
-EstadoSistema exibir_tela_hospedes(const SessaoUsuario *s) {
+static EstadoSistema operar_hospedes(const SessaoUsuario *s, int op) {
     if (!permite_recepcao(s)) {
         return ESTADO_MENU_PRINCIPAL;
     }
     LIMPAR_TELA();
-    printf("[1] Cadastrar [2] Consultar por documento [3] Atualizar [4] Listar");
-    if (s->perfil == PERFIL_ADMIN) {
-        printf(" [5] Excluir");
+    if (op == 1) {
+        puts("CADASTRAR HOSPEDE\n");
+    } else if (op == 2) {
+        puts("BUSCAR HOSPEDE\n");
     }
-    printf(": ");
-    int op = ler_opcao_segura();
     Hospede *h = obter_hospedes();
     if (op == 5 && s->perfil == PERFIL_ADMIN) {
         Hospede *escolhido = selecionar_hospede();
@@ -721,6 +858,29 @@ EstadoSistema exibir_tela_hospedes(const SessaoUsuario *s) {
     pausar_sistema();
     return ESTADO_MENU_PRINCIPAL;
 }
+EstadoSistema exibir_tela_hospedes(const SessaoUsuario *s) {
+    if (!permite_recepcao(s)) {
+        return ESTADO_MENU_PRINCIPAL;
+    }
+    LIMPAR_TELA();
+    printf("[1] Atualizar [2] Listar");
+    if (s->perfil == PERFIL_ADMIN) {
+        printf(" [3] Excluir");
+    }
+    printf(" [0] Voltar: ");
+    int escolha = ler_opcao_segura();
+    if (escolha == 1) {
+        return operar_hospedes(s, 3);
+    }
+    if (escolha == 2) {
+        return operar_hospedes(s, 4);
+    }
+    if (escolha == 3 && s->perfil == PERFIL_ADMIN) {
+        return operar_hospedes(s, 5);
+    }
+    return ESTADO_MENU_PRINCIPAL;
+}
+
 EstadoSistema exibir_tela_governanca(const SessaoUsuario *s) {
     if (!permite_governanca(s)) {
         return ESTADO_MENU_PRINCIPAL;
@@ -785,7 +945,25 @@ EstadoSistema exibir_tela_chales(const SessaoUsuario *s) {
     } else {
         return ESTADO_MENU_PRINCIPAL;
     }
-    if (!linha("Tipo: ", tipo, sizeof(tipo))) {
+    printf("Tipo do chale:\n");
+    printf(" [1] Standard\n [2] Familia\n [3] Luxo\n [0] Voltar\n");
+    printf("Escolha uma opcao: ");
+    int tipo_opcao = ler_opcao_segura();
+    switch (tipo_opcao) {
+    case 1:
+        snprintf(tipo, sizeof(tipo), "Standard");
+        break;
+    case 2:
+        snprintf(tipo, sizeof(tipo), "Familia");
+        break;
+    case 3:
+        snprintf(tipo, sizeof(tipo), "Luxo");
+        break;
+    case 0:
+        return ESTADO_MENU_PRINCIPAL;
+    default:
+        puts("Tipo invalido.");
+        pausar_sistema();
         return ESTADO_MENU_PRINCIPAL;
     }
     printf("Capacidade: ");
@@ -821,8 +999,8 @@ EstadoSistema exibir_tela_relatorio(const SessaoUsuario *s) {
     }
     char a[12], b[12];
     LIMPAR_TELA();
-    if (!linha("Inicio (DD/MM/AAAA): ", a, sizeof(a)) ||
-        !linha("Fim exclusivo (DD/MM/AAAA): ", b, sizeof(b)) || !periodo_valido(a, b)) {
+    if (!ler_data("Inicio (DD/MM/AAAA): ", a) ||
+        !ler_data("Fim exclusivo (DD/MM/AAAA): ", b) || !periodo_valido(a, b)) {
         puts("Periodo invalido.");
         pausar_sistema();
         return ESTADO_MENU_PRINCIPAL;
@@ -1000,19 +1178,21 @@ static EstadoSistema processar_menu_principal(const SessaoUsuario *sessao) {
            contar_checkins_pendentes(), contar_checkouts_pendentes(), contar_chales_livres_hoje());
     printf("\n--------------------------------------------------------------------------------\n");
     printf("MENU PRINCIPAL:\n\n");
-    printf(" [1] Consultar Disponibilidade & Nova Reserva\n");
-    printf(" [2] Mapa de Ocupação (Visão Geral - Carlos)\n");
-    printf(" [3] Realizar Check-in\n");
-    printf(" [4] Lançar Consumo / Extrato da Conta\n");
-    printf(" [5] Realizar Check-out & Fechamento\n");
-    printf(" [6] Alterar / Cancelar Reserva\n");
-    printf(" [7] Buscar / Cadastrar Hóspede\n");
+    printf(" [1] Cadastrar Hóspede\n");
+    printf(" [2] Buscar Hóspede\n");
+    printf(" [3] Gerenciar Hóspedes\n");
+    printf(" [4] Consultar Disponibilidade & Nova Reserva\n");
+    printf(" [5] Mapa de Ocupação Mensal\n");
+    printf(" [6] Realizar Check-in\n");
+    printf(" [7] Lançar Consumo / Extrato da Conta\n");
+    printf(" [8] Realizar Check-out & Fechamento\n");
+    printf(" [9] Alterar / Cancelar Reserva\n");
+    printf(" [10] Governança / Manutenção de Chalés\n");
     if (sessao->perfil == PERFIL_ADMIN) {
-        printf(" [8] Relatório de Auditoria de Operações\n");
-    }
-    printf(" [9] Governança / Manutenção de Chalés\n");
-    if (sessao->perfil == PERFIL_ADMIN) {
-        printf(" [10] Cadastro de chales\n [11] Relatorio de ocupacao e faturamento\n [12] Gerenciar usuarios\n");
+        printf(" [11] Relatório de Auditoria de Operações\n");
+        printf(" [12] Cadastro de Chalés\n");
+        printf(" [13] Relatório de Ocupação e Faturamento\n");
+        printf(" [14] Gerenciar Usuários\n");
     }
     printf(" [0] Sair (Logoff)\n");
     printf("\n--------------------------------------------------------------------------------\n");
@@ -1022,28 +1202,32 @@ static EstadoSistema processar_menu_principal(const SessaoUsuario *sessao) {
 
     switch (opcao) {
     case 1:
-        return ESTADO_DISPONIBILIDADE;
+        return ESTADO_CADASTRAR_HOSPEDE;
     case 2:
-        return ESTADO_MAPA_OCUPACAO;
+        return ESTADO_BUSCAR_HOSPEDE;
     case 3:
-        return ESTADO_CHECK_IN;
-    case 4:
-        return ESTADO_CONSUMO;
-    case 5:
-        return ESTADO_CHECK_OUT;
-    case 6:
-        return ESTADO_ALTERAR_CANCELAR;
-    case 7:
         return ESTADO_HOSPEDE;
+    case 4:
+        return ESTADO_DISPONIBILIDADE;
+    case 5:
+        return ESTADO_MAPA_OCUPACAO;
+    case 6:
+        return ESTADO_CHECK_IN;
+    case 7:
+        return ESTADO_CONSUMO;
     case 8:
-        return sessao->perfil == PERFIL_ADMIN ? ESTADO_AUDITORIA : ESTADO_MENU_PRINCIPAL;
+        return ESTADO_CHECK_OUT;
     case 9:
-        return ESTADO_GOVERNANCA;
+        return ESTADO_ALTERAR_CANCELAR;
     case 10:
-        return sessao->perfil == PERFIL_ADMIN ? ESTADO_CHALES : ESTADO_MENU_PRINCIPAL;
+        return ESTADO_GOVERNANCA;
     case 11:
-        return sessao->perfil == PERFIL_ADMIN ? ESTADO_RELATORIO : ESTADO_MENU_PRINCIPAL;
+        return sessao->perfil == PERFIL_ADMIN ? ESTADO_AUDITORIA : ESTADO_MENU_PRINCIPAL;
     case 12:
+        return sessao->perfil == PERFIL_ADMIN ? ESTADO_CHALES : ESTADO_MENU_PRINCIPAL;
+    case 13:
+        return sessao->perfil == PERFIL_ADMIN ? ESTADO_RELATORIO : ESTADO_MENU_PRINCIPAL;
+    case 14:
         return sessao->perfil == PERFIL_ADMIN ? ESTADO_USUARIOS : ESTADO_MENU_PRINCIPAL;
     case 0:
         return ESTADO_SAIR;
@@ -1083,6 +1267,12 @@ void executar_painel_recepcao(const SessaoUsuario *sessao) {
             break;
         case ESTADO_ALTERAR_CANCELAR:
             estado = exibir_tela_alterar_cancelar(sessao);
+            break;
+        case ESTADO_CADASTRAR_HOSPEDE:
+            estado = operar_hospedes(sessao, 1);
+            break;
+        case ESTADO_BUSCAR_HOSPEDE:
+            estado = operar_hospedes(sessao, 2);
             break;
         case ESTADO_HOSPEDE:
             estado = exibir_tela_hospedes(sessao);

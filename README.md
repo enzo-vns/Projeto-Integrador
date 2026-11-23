@@ -22,8 +22,8 @@ No macOS, a compilação usa CommonCrypto. Em Linux e Windows, requer cabeçalho
 - Gestão de usuários em memória pelo administrador, protegendo a própria conta e o último administrador contra exclusão.
 - Criação, alteração e cancelamento de reservas; registro de horário de entrada e saída.
 - Lançamento de consumo em estadias ativas e fechamento com diárias, consumo e confirmação de pagamento.
-- Mapa de duas semanas, atualização de limpeza e manutenção e trilha de auditoria em memória.
-- Cadastro e atualização de chalés e relatório de ocupação e pagamentos, disponíveis ao administrador. A auditoria também é restrita ao administrador.
+- Mapa mensal com navegação entre meses, atualização de limpeza e manutenção e trilha de auditoria em memória.
+- Cadastro e atualização de chalés com opções de tipo Standard, Família ou Luxo, e relatório de ocupação e pagamentos, disponíveis ao administrador. A auditoria também é restrita ao administrador.
 
 As quatro unidades iniciais têm tarifa zero, pois o documento não informa preços. O administrador deve cadastrar as tarifas reais antes de efetuar cobranças. A tarifa de cada reserva é fixada quando ela é criada ou alterada. O check-in só é aceito entre a data prevista de entrada e o dia anterior à saída prevista. O relatório calcula a ocupação a partir das datas reais de check-in e check-out e usa pagamentos registrados na data do check-out para faturamento; o fim do período é exclusivo. Uma entrada e saída no mesmo dia contam como um dia ocupado.
 

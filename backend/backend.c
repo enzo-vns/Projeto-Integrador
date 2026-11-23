@@ -182,7 +182,9 @@ Chale *buscar_chale_por_id(const char *id_chale) {
 int cadastrar_chale(const char *id, const char *tipo, int capacidade, double tarifa) {
     inicializar_chales();
     if (!isfinite(tarifa) || !id || !*id || strlen(id) >= sizeof(g_chales[0].id) || !tipo ||
-        !*tipo || strlen(tipo) >= sizeof(g_chales[0].tipo) || capacidade < 1 || tarifa < 0 ||
+        !*tipo || strlen(tipo) >= sizeof(g_chales[0].tipo) ||
+        (strcmp(tipo, "Standard") != 0 && strcmp(tipo, "Familia") != 0 &&
+         strcmp(tipo, "Luxo") != 0) || capacidade < 1 || tarifa < 0 ||
         g_total_chales >= MAX_CHALES || buscar_chale_por_id(id)) {
         return 0;
     }

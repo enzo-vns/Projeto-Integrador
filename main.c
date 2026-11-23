@@ -38,7 +38,7 @@ int main(void) {
                 printf("==========================================================================="
                        "=====\n\n");
                 printf(" [1] Gerenciar Status e Limpeza dos Chalés\n");
-                printf(" [2] Visualizar Mapa de Ocupação da Semana (Carlos)\n");
+                printf(" [2] Visualizar Mapa de Ocupação Mensal\n");
                 printf(" [0] Fazer Logoff\n\n");
                 printf("Opção > ");
                 op = ler_opcao_segura();

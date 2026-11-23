@@ -68,6 +68,7 @@ int main(void) {
     assert(cadastrar_chale("CH-05", "Familia", 4, 150));
     assert(!cadastrar_chale("CH-05", "Familia", 4, 150));
     assert(!cadastrar_chale("CH-06", "Familia", 4, NAN));
+    assert(!cadastrar_chale("CH-06", "Outro", 4, 150));
     assert(buscar_chale_por_id(NULL) == NULL);
     assert(cadastrar_hospede("Teste", "documento", NULL) == -1);
 
