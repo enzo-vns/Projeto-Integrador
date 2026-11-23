@@ -225,6 +225,34 @@ int obter_total_hospedes(void) {
     return g_total_hospedes;
 }
 
+/* Compara CPFs com e sem pontuacao; outros documentos usam o texto integral. */
+static int extrair_cpf(const char *documento, char digitos[12]) {
+    int quantidade = 0;
+    for (const char *p = documento; *p; p++) {
+        if (*p >= '0' && *p <= '9') {
+            if (quantidade >= 11) {
+                return 0;
+            }
+            digitos[quantidade++] = *p;
+        } else if (*p != '.' && *p != '-') {
+            return 0;
+        }
+    }
+    digitos[quantidade] = '\0';
+    return quantidade == 11;
+}
+
+int documentos_iguais(const char *primeiro, const char *segundo) {
+    if (!primeiro || !segundo) {
+        return 0;
+    }
+    char cpf_a[12], cpf_b[12];
+    if (extrair_cpf(primeiro, cpf_a) && extrair_cpf(segundo, cpf_b)) {
+        return strcmp(cpf_a, cpf_b) == 0;
+    }
+    return strcmp(primeiro, segundo) == 0;
+}
+
 int cadastrar_hospede(const char *nome, const char *documento, const char *telefone) {
     inicializar_hospedes();
 
@@ -237,7 +265,7 @@ int cadastrar_hospede(const char *nome, const char *documento, const char *telef
         return -1;
     }
     for (int i = 0; i < g_total_hospedes; i++) {
-        if (!strcmp(g_hospedes[i].documento, documento)) {
+        if (documentos_iguais(g_hospedes[i].documento, documento)) {
             return -1;
         }
     }

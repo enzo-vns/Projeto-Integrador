@@ -366,10 +366,11 @@ static int linha(const char *titulo, char *buf, size_t n) {
     }
     return *buf != '\0';
 }
-/* A mascara aceita oito digitos e monta a data sem exigir as barras. */
-static int ler_data(const char *titulo, char data[12]) {
-    char digitos[9] = {0};
+/* Le digitos com separadores automaticos para datas e CPF. */
+static int ler_mascara(const char *titulo, char *resultado, size_t tamanho, int cpf) {
+    char digitos[12] = {0};
     int quantidade = 0;
+    int limite = cpf ? 11 : 8;
 #ifdef _WIN32
     int interativo = _isatty(_fileno(stdin));
 #else
@@ -391,63 +392,95 @@ static int ler_data(const char *titulo, char data[12]) {
     }
 #endif
     if (!interativo) {
-        char entrada[32];
+        char entrada[64];
         if (!linha(titulo, entrada, sizeof(entrada))) {
             return 0;
         }
-        size_t tamanho = strlen(entrada);
-        if (tamanho == 10 && entrada[2] == '/' && entrada[5] == '/') {
-            snprintf(data, 12, "%s", entrada);
-            return 1;
-        }
-        if (tamanho != 8 || strspn(entrada, "0123456789") != 8) {
-            return 0;
-        }
-        snprintf(data, 12, "%.2s/%.2s/%.4s", entrada, entrada + 2, entrada + 4);
-        return 1;
-    }
-
-    printf("%s", titulo);
-    fflush(stdout);
-    for (;;) {
-#ifdef _WIN32
-        int c = _getch();
-#else
-        int c = getchar();
-#endif
-        if (c == EOF || c == '\n' || c == '\r' || c == 3) {
-            if (c == 3) {
-                quantidade = 0;
-            }
-            break;
-        }
-        if (c == 8 || c == 127) {
-            if (quantidade > 0) {
-                if (quantidade == 2 || quantidade == 4) {
-                    printf("\b \b");
+        for (size_t i = 0; entrada[i]; i++) {
+            char c = entrada[i];
+            if (c >= '0' && c <= '9') {
+                if (quantidade >= limite) {
+                    return 0;
                 }
-                printf("\b \b");
-                digitos[--quantidade] = '\0';
+                digitos[quantidade++] = c;
+            } else if ((cpf && c != '.' && c != '-') || (!cpf && c != '/')) {
+                return 0;
+            }
+        }
+    } else {
+        printf("%s", titulo);
+        fflush(stdout);
+        for (;;) {
+#ifdef _WIN32
+            int c = _getch();
+#else
+            int c = getchar();
+#endif
+            if (c == EOF || c == '\n' || c == '\r' || c == 3) {
+                if (c == 3) {
+                    quantidade = 0;
+                }
+                break;
+            }
+            if (c == 8 || c == 127) {
+                if (quantidade > 0) {
+                    if ((cpf && (quantidade == 3 || quantidade == 6 || quantidade == 9)) ||
+                        (!cpf && (quantidade == 2 || quantidade == 4))) {
+                        printf("\b \b");
+                    }
+                    printf("\b \b");
+                    digitos[--quantidade] = '\0';
+                    fflush(stdout);
+                }
+            } else if (c >= '0' && c <= '9' && quantidade < limite) {
+                digitos[quantidade++] = (char)c;
+                putchar(c);
+                if (cpf && (quantidade == 3 || quantidade == 6)) {
+                    putchar('.');
+                } else if (cpf && quantidade == 9) {
+                    putchar('-');
+                } else if (!cpf && (quantidade == 2 || quantidade == 4)) {
+                    putchar('/');
+                }
                 fflush(stdout);
             }
-        } else if (c >= '0' && c <= '9' && quantidade < 8) {
-            digitos[quantidade++] = (char)c;
-            putchar(c);
-            if (quantidade == 2 || quantidade == 4) {
-                putchar('/');
-            }
-            fflush(stdout);
         }
-    }
 #ifndef _WIN32
-    tcsetattr(STDIN_FILENO, TCSANOW, &original);
+        tcsetattr(STDIN_FILENO, TCSANOW, &original);
 #endif
-    putchar('\n');
-    if (quantidade != 8) {
+        putchar('\n');
+    }
+    if (quantidade != limite) {
         return 0;
     }
-    snprintf(data, 12, "%.2s/%.2s/%.4s", digitos, digitos + 2, digitos + 4);
+    if (cpf) {
+        snprintf(resultado, tamanho, "%.3s.%.3s.%.3s-%.2s", digitos, digitos + 3,
+                 digitos + 6, digitos + 9);
+    } else {
+        snprintf(resultado, tamanho, "%.2s/%.2s/%.4s", digitos, digitos + 2, digitos + 4);
+    }
     return 1;
+}
+
+static int ler_data(const char *titulo, char data[12]) {
+    return ler_mascara(titulo, data, 12, 0);
+}
+
+static int ler_documento(char documento[20]) {
+    puts("Tipo de documento: [1] CPF  [2] Outro documento  [0] Voltar");
+    printf("Opcao: ");
+    int tipo = ler_opcao_segura();
+    if (tipo == 1) {
+        if (!ler_mascara("CPF: ", documento, 20, 1)) {
+            puts("CPF deve conter 11 numeros.");
+            return 0;
+        }
+        return 1;
+    }
+    if (tipo == 2) {
+        return linha("Documento: ", documento, 20);
+    }
+    return 0;
 }
 
 static void logar(const SessaoUsuario *sessao, const char *acao, int registro) {
@@ -784,10 +817,10 @@ static EstadoSistema operar_hospedes(const SessaoUsuario *s, int op) {
         }
     } else if (op == 2) {
         char doc[20];
-        if (linha("CPF/documento: ", doc, sizeof(doc))) {
+        if (ler_documento(doc)) {
             int achou = 0;
             for (int i = 0; i < obter_total_hospedes(); i++) {
-                if (!strcmp(h[i].documento, doc)) {
+                if (documentos_iguais(h[i].documento, doc)) {
                     printf("%s | %s | %s | %s | %s\n", h[i].nome, h[i].documento, h[i].telefone,
                            h[i].endereco, h[i].email);
                     Reserva *r = obter_reservas();
@@ -816,7 +849,7 @@ static EstadoSistema operar_hospedes(const SessaoUsuario *s, int op) {
                 return ESTADO_MENU_PRINCIPAL;
             }
         }
-        if (!linha("Nome: ", nome, sizeof(nome)) || !linha("CPF/documento: ", doc, sizeof(doc))) {
+        if (!linha("Nome: ", nome, sizeof(nome)) || !ler_documento(doc)) {
             puts("Nome e documento sao obrigatorios.");
             pausar_sistema();
             return ESTADO_MENU_PRINCIPAL;
@@ -828,7 +861,7 @@ static EstadoSistema operar_hospedes(const SessaoUsuario *s, int op) {
             id = cadastrar_hospede(nome, doc, tel);
         } else {
             for (int i = 0; i < obter_total_hospedes(); i++) {
-                if (h[i].id != id && !strcmp(h[i].documento, doc)) {
+                if (h[i].id != id && documentos_iguais(h[i].documento, doc)) {
                     id = -1;
                 }
             }

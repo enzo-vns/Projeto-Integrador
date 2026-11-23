@@ -100,6 +100,7 @@ void inicializar_hospedes(void);
 Hospede *obter_hospedes(void);
 int obter_total_hospedes(void);
 int cadastrar_hospede(const char *nome, const char *documento, const char *telefone);
+int documentos_iguais(const char *primeiro, const char *segundo);
 Hospede *buscar_hospede_por_id(int id);
 int excluir_hospede(int id);
 

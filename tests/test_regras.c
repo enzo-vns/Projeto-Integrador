@@ -71,6 +71,9 @@ int main(void) {
     assert(!cadastrar_chale("CH-06", "Outro", 4, 150));
     assert(buscar_chale_por_id(NULL) == NULL);
     assert(cadastrar_hospede("Teste", "documento", NULL) == -1);
+    assert(documentos_iguais("321.654.987-00", "32165498700"));
+    assert(!documentos_iguais("RG-123", "RG123"));
+    assert(cadastrar_hospede("Duplicado", "32165498700", "") == -1);
 
     int livres_antes = contar_chales_livres_hoje();
     assert(criar_reserva(1, "CH-02", hoje, amanha) > 0);
