@@ -1,6 +1,11 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -I. -Ibackend -Itelas
 
+UNAME_S := $(shell uname -s 2>/dev/null)
+ifneq ($(UNAME_S),Darwin)
+    LDLIBS += -lcrypto
+endif
+
 OBJDIR = obj
 BINDIR = bin
 
@@ -25,7 +30,7 @@ endif
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $^ -o $@
+	$(CC) $(CFLAGS) $^ -o $@ $(LDLIBS)
 	@echo "\n>>> Sistema compilado com sucesso: ./$@\n"
 
 $(OBJDIR)/%.o: %.c backend/backend.h telas/telas.h
@@ -42,7 +47,7 @@ clean:
 
 test:
 	@$(call MKDIR, $(OBJDIR))
-	$(CC) $(CFLAGS) tests/test_regras.c backend/backend.c telas/telas.c -o $(OBJDIR)/test_regras
+	$(CC) $(CFLAGS) tests/test_regras.c backend/backend.c telas/telas.c -o $(OBJDIR)/test_regras $(LDLIBS)
 	./$(OBJDIR)/test_regras
 
 .PHONY: all run clean test

@@ -47,13 +47,14 @@ int main(void) {
     assert(!periodo_valido(datas[0], datas[0]));
     assert(criar_reserva(99, "CH-01", datas[0], datas[2]) == -1);
     assert(criar_reserva(1, "CH-99", datas[0], datas[2]) == -1);
-    int a = criar_reserva(1, "CH-01", datas[0], datas[2]);
+    int a = criar_reserva(1, "CH-01", hoje, datas[2]);
     assert(a > 0);
     assert(criar_reserva(2, "CH-01", datas[1], datas[3]) == -2);
     int b = criar_reserva(2, "CH-01", datas[2], datas[4]);
     assert(b > 0);
     assert(alterar_reserva(b, 2, "CH-01", datas[1], datas[3]) == -2);
     assert(alterar_reserva(b, 2, "CH-01", ontem, amanha) == -1);
+    assert(!efetuar_checkin(b)); /* reserva futura nao pode iniciar antes da data */
     assert(efetuar_checkin(a));
     assert(!efetuar_checkin(b));
     assert(lancar_consumo(b, "agua", 5) == -1);
@@ -81,6 +82,27 @@ int main(void) {
     assert(strcmp(obter_logs_auditoria()[0].acao, "TESTE") == 0);
     assert(obter_logs_auditoria()[0].usuario[sizeof(obter_logs_auditoria()[0].usuario) - 1] ==
            '\0');
+    assert(salvar_usuario("teste.login", "Pessoa Teste", PERFIL_RECEPCAO, "senha987"));
+    assert(autenticar_usuario("teste.login", "senha987", &sessao));
+    assert(!autenticar_usuario("teste.login", "senhaerrada", &sessao));
+    assert(sessao.perfil == PERFIL_NENHUM);
+    assert(salvar_usuario("teste.login", "Pessoa Teste", PERFIL_GOVERNANCA, "senha654"));
+    assert(!autenticar_usuario("teste.login", "senha987", &sessao));
+    assert(autenticar_usuario("teste.login", "senha654", &sessao));
+    assert(!excluir_usuario("teste.login", "teste.login"));
+    assert(!excluir_usuario("outro", "diretoria.admin"));
+    assert(excluir_usuario("diretoria.admin", "teste.login"));
+    assert(!autenticar_usuario("teste.login", "senha654", &sessao));
+    assert(!excluir_chale("CH-01"));
+    assert(!excluir_hospede(1));
+    int hospede_sem_reserva = cadastrar_hospede("Novo", "doc-novo", "");
+    assert(hospede_sem_reserva > 0);
+    assert(excluir_hospede(hospede_sem_reserva));
+    assert(!buscar_hospede_por_id(hospede_sem_reserva));
+    assert(excluir_reserva(b));
+    assert(!buscar_reserva_por_id(b));
+    assert(excluir_chale("CH-05"));
+    assert(!buscar_chale_por_id("CH-05"));
     puts("Testes de regras aprovados.");
     return 0;
 }

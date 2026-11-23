@@ -28,7 +28,8 @@ typedef enum {
     ESTADO_AUDITORIA,
     ESTADO_CHALES,
     ESTADO_RELATORIO,
-    ESTADO_GOVERNANCA
+    ESTADO_GOVERNANCA,
+    ESTADO_USUARIOS
 } EstadoSistema;
 
 // Perfis de acesso dos usuários
@@ -71,6 +72,7 @@ Chale *obter_chales(void);
 int obter_total_chales(void);
 int cadastrar_chale(const char *id, const char *tipo, int capacidade, double tarifa);
 int contar_chales_livres_hoje(void);
+int excluir_chale(const char *id);
 
 // Rótulos visuais para tabela ASCII
 const char *rotulo_status(StatusChale s);
@@ -97,6 +99,7 @@ Hospede *obter_hospedes(void);
 int obter_total_hospedes(void);
 int cadastrar_hospede(const char *nome, const char *documento, const char *telefone);
 Hospede *buscar_hospede_por_id(int id);
+int excluir_hospede(int id);
 
 /* RESERVAS */
 #define MAX_RESERVAS 10000
@@ -124,6 +127,7 @@ int efetuar_checkin(int id_reserva);
 int efetuar_checkout(int id_reserva);
 int cancelar_reserva(int id_reserva);
 Reserva *buscar_reserva_por_id(int id);
+int excluir_reserva(int id);
 
 /* CONSUMO */
 #define MAX_CONSUMO 100
@@ -167,6 +171,16 @@ LogAuditoria *obter_logs_auditoria(void);
 int obter_total_logs_auditoria(void);
 
 /* AUTH */
+#define MAX_USUARIOS 50
+typedef struct {
+    char usuario[32];
+    char nome[50];
+    PerfilUsuario perfil;
+} UsuarioResumo;
+int listar_usuarios(UsuarioResumo *saida, int limite);
+int salvar_usuario(const char *usuario, const char *nome, PerfilUsuario perfil, const char *senha);
+int excluir_usuario(const char *usuario_atual, const char *usuario);
+
 // Realiza a verificação de credenciais e retorna 1 se autenticado com sucesso
 int autenticar_usuario(const char *usuario, const char *senha, SessaoUsuario *sessao);
 

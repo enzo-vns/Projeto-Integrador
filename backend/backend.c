@@ -4,6 +4,15 @@
 #include <limits.h>
 #include <math.h>
 
+#ifdef __APPLE__
+#include <CommonCrypto/CommonKeyDerivation.h>
+#include <CommonCrypto/CommonCryptoError.h>
+#include <CommonCrypto/CommonRandom.h>
+#else
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+#endif
+
 /* COMMON */
 // Limpa o buffer de entrada do teclado para evitar loop infinito
 void limpar_buffer(void) {
@@ -230,7 +239,12 @@ int cadastrar_hospede(const char *nome, const char *documento, const char *telef
             return -1;
         }
     }
-    novo.id = g_total_hospedes + 1;
+    novo.id = 1;
+    for (int i = 0; i < g_total_hospedes; i++) {
+        if (g_hospedes[i].id >= novo.id) {
+            novo.id = g_hospedes[i].id + 1;
+        }
+    }
     strncpy(novo.nome, nome, sizeof(novo.nome) - 1);
     novo.nome[sizeof(novo.nome) - 1] = '\0';
 
@@ -343,7 +357,13 @@ int criar_reserva(int hospede_id, const char *id, const char *a, const char *b) 
     }
     Reserva *r = &g_reservas[g_total_reservas];
     memset(r, 0, sizeof(*r));
-    r->id = ++g_total_reservas;
+    r->id = 1;
+    for (int i = 0; i < g_total_reservas; i++) {
+        if (g_reservas[i].id >= r->id) {
+            r->id = g_reservas[i].id + 1;
+        }
+    }
+    g_total_reservas++;
     r->hospede_id = h->id;
     snprintf(r->hospede, sizeof(r->hospede), "%s", h->nome);
     snprintf(r->chale, sizeof(r->chale), "%s", id);
@@ -385,6 +405,14 @@ int efetuar_checkin(int id) {
     Chale *c = r ? buscar_chale_por_id(r->chale) : NULL;
     if (!r || !c || r->checkedIn || strcmp(r->status, "confirmada") || c->status[0] == OCUPADO ||
         c->status[0] == LIMPEZA || c->status[0] == MANUTENCAO) {
+        return 0;
+    }
+    time_t agora = time(NULL);
+    struct tm *hoje = localtime(&agora);
+    char data_atual[12];
+    if (!hoje || !strftime(data_atual, sizeof(data_atual), "%d/%m/%Y", hoje) ||
+        data_numero(data_atual) < data_numero(r->checkin) ||
+        data_numero(data_atual) >= data_numero(r->checkout)) {
         return 0;
     }
     r->checkedIn = 1;
@@ -532,35 +560,217 @@ int obter_total_logs_auditoria(void) {
     return g_quantidade_logs;
 }
 
-/* AUTH */
-int autenticar_usuario(const char *usuario, const char *senha, SessaoUsuario *sessao) {
-    if (!usuario || !senha || !sessao) {
+/* Exclusoes preservam referencias historicas e reservas em andamento. */
+int excluir_chale(const char *id) {
+    if (!id || g_total_chales <= 1) {
         return 0;
     }
-
-    if (strcmp(usuario, "marcos.recepcao") == 0 && strcmp(senha, "123456") == 0) {
-        strcpy(sessao->usuario, "marcos.rec");
-        strcpy(sessao->nome, "Marcos (Recepcao)");
-        sessao->perfil = PERFIL_RECEPCAO;
-        adicionar_log_auditoria(sessao->usuario, "LOGIN", "Acesso ao painel da recepcao");
-        return 1;
+    for (int i = 0; i < g_total_reservas; i++) {
+        if (strcmp(g_reservas[i].chale, id) == 0) {
+            return 0;
+        }
     }
-
-    if (strcmp(usuario, "diretoria.admin") == 0 && strcmp(senha, "123456") == 0) {
-        strcpy(sessao->usuario, "diretoria");
-        strcpy(sessao->nome, "Diretoria (Administrador)");
-        sessao->perfil = PERFIL_ADMIN;
-        adicionar_log_auditoria(sessao->usuario, "LOGIN", "Acesso ao painel administrativo");
-        return 1;
+    for (int i = 0; i < g_total_chales; i++) {
+        if (strcmp(g_chales[i].id, id) == 0 && g_chales[i].status[0] != OCUPADO) {
+            memmove(&g_chales[i], &g_chales[i + 1],
+                    (size_t)(g_total_chales - i - 1) * sizeof(g_chales[0]));
+            memset(&g_chales[--g_total_chales], 0, sizeof(g_chales[0]));
+            return 1;
+        }
     }
+    return 0;
+}
 
-    if (strcmp(usuario, "ana.governanca") == 0 && strcmp(senha, "123456") == 0) {
-        strcpy(sessao->usuario, "ana.gov");
-        strcpy(sessao->nome, "Ana (Governanca)");
-        sessao->perfil = PERFIL_GOVERNANCA;
-        adicionar_log_auditoria(sessao->usuario, "LOGIN", "Acesso ao painel de governanca");
-        return 1;
+int excluir_hospede(int id) {
+    for (int i = 0; i < g_total_reservas; i++) {
+        if (g_reservas[i].hospede_id == id) {
+            return 0;
+        }
     }
+    for (int i = 0; i < g_total_hospedes; i++) {
+        if (g_hospedes[i].id == id) {
+            memmove(&g_hospedes[i], &g_hospedes[i + 1],
+                    (size_t)(g_total_hospedes - i - 1) * sizeof(g_hospedes[0]));
+            memset(&g_hospedes[--g_total_hospedes], 0, sizeof(g_hospedes[0]));
+            return 1;
+        }
+    }
+    return 0;
+}
 
+int excluir_reserva(int id) {
+    for (int i = 0; i < g_total_reservas; i++) {
+        if (g_reservas[i].id == id && !g_reservas[i].checkedIn &&
+            strcmp(g_reservas[i].status, "cancelada") == 0) {
+            memmove(&g_reservas[i], &g_reservas[i + 1],
+                    (size_t)(g_total_reservas - i - 1) * sizeof(g_reservas[0]));
+            memset(&g_reservas[--g_total_reservas], 0, sizeof(g_reservas[0]));
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* AUTH: hashes PBKDF2-HMAC-SHA256 para as contas de demonstracao. */
+typedef struct {
+    char usuario[32];
+    char nome[50];
+    PerfilUsuario perfil;
+    char salt[33];
+    char hash[65];
+} CredencialInicial;
+
+static CredencialInicial contas[MAX_USUARIOS] = {
+        {"marcos.recepcao", "Marcos (Recepcao)", PERFIL_RECEPCAO,
+         "dcf7a631b89092f42bb74511ca92c613", "1fab4dd8463f5fff848745d5f208d64bb95de5911d6de8a5483d326bb4e1a51f"},
+        {"diretoria.admin", "Diretoria (Administrador)", PERFIL_ADMIN,
+         "bf404153a71f8d7019e83ca48ffef246", "89d2e613e49c3e17333a196349832f988b4a2f154ddbe249e64f56d75f834f07"},
+        {"ana.governanca", "Ana (Governanca)", PERFIL_GOVERNANCA,
+         "5e2362fb8d0a54e73b91f496d24a3981", "3855238fb4f56664580a3944d1db570436fff8d0c86d9cb9278559977da59fb1"}
+};
+static int total_contas = 3;
+
+static int converter_hex(const char *texto, unsigned char *saida, size_t tamanho) {
+    for (size_t i = 0; i < tamanho; i++) {
+        unsigned int valor;
+        if (sscanf(texto + i * 2, "%2x", &valor) != 1) {
+            return 0;
+        }
+        saida[i] = (unsigned char)valor;
+    }
+    return 1;
+}
+
+static int conferir_senha(const char *senha, const char *salt_hex, const char *hash_hex) {
+    unsigned char salt[16], esperado[32], calculado[32];
+    unsigned char diferenca = 0;
+    if (!converter_hex(salt_hex, salt, sizeof(salt)) ||
+        !converter_hex(hash_hex, esperado, sizeof(esperado))) {
+        return 0;
+    }
+#ifdef __APPLE__
+    if (CCKeyDerivationPBKDF(kCCPBKDF2, senha, strlen(senha), salt, sizeof(salt),
+                             kCCPRFHmacAlgSHA256, 310000, calculado, sizeof(calculado)) != kCCSuccess) {
+        return 0;
+    }
+#else
+    if (PKCS5_PBKDF2_HMAC(senha, (int)strlen(senha), salt, sizeof(salt), 310000,
+                          EVP_sha256(), sizeof(calculado), calculado) != 1) {
+        return 0;
+    }
+#endif
+    for (size_t i = 0; i < sizeof(calculado); i++) {
+        diferenca |= calculado[i] ^ esperado[i];
+    }
+    memset(calculado, 0, sizeof(calculado));
+    return diferenca == 0;
+}
+
+int listar_usuarios(UsuarioResumo *saida, int limite) {
+    if (!saida || limite < 0) {
+        return 0;
+    }
+    int quantidade = total_contas < limite ? total_contas : limite;
+    for (int i = 0; i < quantidade; i++) {
+        snprintf(saida[i].usuario, sizeof(saida[i].usuario), "%s", contas[i].usuario);
+        snprintf(saida[i].nome, sizeof(saida[i].nome), "%s", contas[i].nome);
+        saida[i].perfil = contas[i].perfil;
+    }
+    return quantidade;
+}
+
+int salvar_usuario(const char *usuario, const char *nome, PerfilUsuario perfil, const char *senha) {
+    unsigned char salt[16], hash[32];
+    if (!usuario || !*usuario || strlen(usuario) >= sizeof(contas[0].usuario) ||
+        !nome || !*nome || strlen(nome) >= sizeof(contas[0].nome) ||
+        !senha || strlen(senha) < 6 || strlen(senha) > 31 ||
+        perfil < PERFIL_RECEPCAO || perfil > PERFIL_ADMIN) {
+        return 0;
+    }
+    int indice = total_contas;
+    int administradores = 0;
+    for (int i = 0; i < total_contas; i++) {
+        if (strcmp(contas[i].usuario, usuario) == 0) {
+            indice = i;
+        }
+        if (contas[i].perfil == PERFIL_ADMIN) {
+            administradores++;
+        }
+    }
+    if (indice == MAX_USUARIOS || (indice < total_contas && contas[indice].perfil == PERFIL_ADMIN &&
+                                  perfil != PERFIL_ADMIN && administradores == 1)) {
+        return 0;
+    }
+#ifdef __APPLE__
+    if (CCRandomGenerateBytes(salt, sizeof(salt)) != kCCSuccess ||
+        CCKeyDerivationPBKDF(kCCPBKDF2, senha, strlen(senha), salt, sizeof(salt),
+                             kCCPRFHmacAlgSHA256, 310000, hash, sizeof(hash)) != kCCSuccess) {
+        return 0;
+    }
+#else
+    if (RAND_bytes(salt, sizeof(salt)) != 1 ||
+        PKCS5_PBKDF2_HMAC(senha, (int)strlen(senha), salt, sizeof(salt), 310000,
+                          EVP_sha256(), sizeof(hash), hash) != 1) {
+        return 0;
+    }
+#endif
+    CredencialInicial *c = &contas[indice];
+    snprintf(c->usuario, sizeof(c->usuario), "%s", usuario);
+    snprintf(c->nome, sizeof(c->nome), "%s", nome);
+    c->perfil = perfil;
+    for (size_t i = 0; i < sizeof(salt); i++) {
+        snprintf(c->salt + i * 2, 3, "%02x", salt[i]);
+    }
+    for (size_t i = 0; i < sizeof(hash); i++) {
+        snprintf(c->hash + i * 2, 3, "%02x", hash[i]);
+    }
+    memset(hash, 0, sizeof(hash));
+    if (indice == total_contas) {
+        total_contas++;
+    }
+    return 1;
+}
+
+int excluir_usuario(const char *usuario_atual, const char *usuario) {
+    if (!usuario_atual || !usuario || strcmp(usuario_atual, usuario) == 0) {
+        return 0;
+    }
+    int administradores = 0;
+    int indice = -1;
+    for (int i = 0; i < total_contas; i++) {
+        if (contas[i].perfil == PERFIL_ADMIN) {
+            administradores++;
+        }
+        if (strcmp(contas[i].usuario, usuario) == 0) {
+            indice = i;
+        }
+    }
+    if (indice < 0 || (contas[indice].perfil == PERFIL_ADMIN && administradores == 1)) {
+        return 0;
+    }
+    memmove(&contas[indice], &contas[indice + 1],
+            (size_t)(total_contas - indice - 1) * sizeof(contas[0]));
+    memset(&contas[--total_contas], 0, sizeof(contas[0]));
+    return 1;
+}
+
+int autenticar_usuario(const char *usuario, const char *senha, SessaoUsuario *sessao) {
+    if (!sessao) {
+        return 0;
+    }
+    memset(sessao, 0, sizeof(*sessao));
+    if (!usuario || !senha) {
+        return 0;
+    }
+    for (size_t i = 0; i < (size_t)total_contas; i++) {
+        if (strcmp(usuario, contas[i].usuario) == 0 &&
+            conferir_senha(senha, contas[i].salt, contas[i].hash)) {
+            snprintf(sessao->usuario, sizeof(sessao->usuario), "%s", contas[i].usuario);
+            snprintf(sessao->nome, sizeof(sessao->nome), "%s", contas[i].nome);
+            sessao->perfil = contas[i].perfil;
+            adicionar_log_auditoria(sessao->usuario, "LOGIN", "Acesso autenticado");
+            return 1;
+        }
+    }
     return 0;
 }

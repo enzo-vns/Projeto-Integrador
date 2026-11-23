@@ -68,10 +68,6 @@ int exibir_tela_login(SessaoUsuario *sessao) {
             return 1;
         } else {
             printf("\n[ERRO] Usuario ou senha incorretos.\n");
-            printf("Credenciais de teste:\n");
-            printf(" - marcos.recepcao / 123456\n");
-            printf(" - diretoria.admin / 123456\n");
-            printf(" - ana.governanca  / 123456\n");
             pausar_sistema();
         }
     }
@@ -378,14 +374,18 @@ static Hospede *selecionar_hospede(void) {
     Hospede *hospedes = obter_hospedes();
     int total = obter_total_hospedes();
     for (int i = 0; i < total; i++) {
-        printf("[%d] %s | Documento: %s\n", i + 1, hospedes[i].nome, hospedes[i].documento);
+        printf("ID %d | %s\n", hospedes[i].id, hospedes[i].nome);
     }
-    printf("Escolha um hospede pelo numero da lista (0 para voltar): ");
-    int opcao = ler_opcao_segura();
-    if (opcao < 1 || opcao > total) {
+    printf("Informe o ID do hospede (0 para voltar): ");
+    int id = ler_opcao_segura();
+    if (id <= 0) {
         return NULL;
     }
-    return &hospedes[opcao - 1];
+    Hospede *hospede = buscar_hospede_por_id(id);
+    if (!hospede) {
+        puts("Hospede nao localizado.");
+    }
+    return hospede;
 }
 
 static Chale *selecionar_chale(const char *entrada, const char *saida, int ignorar) {
@@ -435,7 +435,7 @@ static void resultado_reserva(int resultado) {
     if (resultado > 0) {
         puts("Reserva salva.");
     } else if (resultado == -2) {
-        puts("Chale indisponivel para o periodo escolhido.");
+        puts("Bloqueio de Overbooking: Chale indisponivel para esta data.");
     } else {
         puts("Dados invalidos ou limite atingido.");
     }
@@ -576,7 +576,11 @@ EstadoSistema exibir_tela_alterar_cancelar(const SessaoUsuario *s) {
         return ESTADO_MENU_PRINCIPAL;
     }
     int id = reserva->id;
-    printf("[1] Alterar [2] Cancelar: ");
+    printf("[1] Alterar [2] Cancelar");
+    if (s->perfil == PERFIL_ADMIN) {
+        printf(" [3] Excluir reserva cancelada");
+    }
+    printf(": ");
     int op = ler_opcao_segura();
     if (op == 1) {
         int hid;
@@ -601,6 +605,14 @@ EstadoSistema exibir_tela_alterar_cancelar(const SessaoUsuario *s) {
                 puts("Reserva inexistente, cancelada ou com estadia iniciada.");
             }
         }
+    } else if (op == 3 && s->perfil == PERFIL_ADMIN) {
+        printf("Excluir reserva cancelada? [1] Sim: ");
+        if (ler_opcao_segura() == 1 && excluir_reserva(id)) {
+            adicionar_log_auditoria(s->usuario, "EXCLUI_RESERVA", "Reserva cancelada excluida");
+            puts("Reserva excluida.");
+        } else {
+            puts("Exclusao cancelada ou reserva nao elegivel.");
+        }
     }
     pausar_sistema();
     return ESTADO_MENU_PRINCIPAL;
@@ -610,13 +622,28 @@ EstadoSistema exibir_tela_hospedes(const SessaoUsuario *s) {
         return ESTADO_MENU_PRINCIPAL;
     }
     LIMPAR_TELA();
-    printf("[1] Cadastrar [2] Consultar por documento [3] Atualizar [4] Listar: ");
+    printf("[1] Cadastrar [2] Consultar por documento [3] Atualizar [4] Listar");
+    if (s->perfil == PERFIL_ADMIN) {
+        printf(" [5] Excluir");
+    }
+    printf(": ");
     int op = ler_opcao_segura();
     Hospede *h = obter_hospedes();
-    if (op == 4) {
+    if (op == 5 && s->perfil == PERFIL_ADMIN) {
+        Hospede *escolhido = selecionar_hospede();
+        if (escolhido) {
+            int id = escolhido->id;
+            printf("Excluir hospede sem reservas? [1] Sim: ");
+            if (ler_opcao_segura() == 1 && excluir_hospede(id)) {
+                adicionar_log_auditoria(s->usuario, "EXCLUI_HOSPEDE", "Cadastro excluido");
+                puts("Hospede excluido.");
+            } else {
+                puts("Exclusao cancelada ou hospede possui reservas.");
+            }
+        }
+    } else if (op == 4) {
         for (int i = 0; i < obter_total_hospedes(); i++) {
-            printf("%s | %s | %s | %s | %s\n", h[i].nome, h[i].documento, h[i].telefone,
-                   h[i].endereco, h[i].email);
+            printf("ID %d | %s\n", h[i].id, h[i].nome);
         }
     } else if (op == 2) {
         char doc[20];
@@ -724,10 +751,26 @@ EstadoSistema exibir_tela_chales(const SessaoUsuario *s) {
         return ESTADO_MENU_PRINCIPAL;
     }
     LIMPAR_TELA();
-    printf("[1] Cadastrar chale [2] Atualizar chale [0] Voltar: ");
+    printf("[1] Cadastrar chale [2] Atualizar chale [3] Excluir chale [0] Voltar: ");
     int escolha = ler_opcao_segura();
     Chale *p = NULL;
     char id[8], tipo[16];
+    if (escolha == 3) {
+        p = selecionar_chale(NULL, NULL, 0);
+        if (p) {
+            char codigo[8];
+            snprintf(codigo, sizeof(codigo), "%s", p->id);
+            printf("Excluir chale sem reservas? [1] Sim: ");
+            if (ler_opcao_segura() == 1 && excluir_chale(codigo)) {
+                adicionar_log_auditoria(s->usuario, "EXCLUI_CHALE", "Chale excluido");
+                puts("Chale excluido.");
+            } else {
+                puts("Exclusao cancelada, chale vinculado ou ultimo chale.");
+            }
+            pausar_sistema();
+        }
+        return ESTADO_MENU_PRINCIPAL;
+    }
     if (escolha == 2) {
         p = selecionar_chale(NULL, NULL, 0);
         if (!p) {
@@ -735,7 +778,10 @@ EstadoSistema exibir_tela_chales(const SessaoUsuario *s) {
         }
         snprintf(id, sizeof(id), "%s", p->id);
     } else if (escolha == 1) {
-        snprintf(id, sizeof(id), "CH-%03d", obter_total_chales() + 1);
+        int numero = 1;
+        do {
+            snprintf(id, sizeof(id), "CH-%03d", numero++);
+        } while (numero <= MAX_CHALES + 1 && buscar_chale_por_id(id));
     } else {
         return ESTADO_MENU_PRINCIPAL;
     }
@@ -862,6 +908,83 @@ EstadoSistema exibir_tela_relatorio(const SessaoUsuario *s) {
     return ESTADO_MENU_PRINCIPAL;
 }
 
+static EstadoSistema exibir_tela_usuarios(const SessaoUsuario *sessao) {
+    if (!sessao || sessao->perfil != PERFIL_ADMIN) {
+        return ESTADO_MENU_PRINCIPAL;
+    }
+    UsuarioResumo usuarios[MAX_USUARIOS];
+    int total = listar_usuarios(usuarios, MAX_USUARIOS);
+    LIMPAR_TELA();
+    for (int i = 0; i < total; i++) {
+        printf("[%d] %s | %s | Perfil %d\n", i + 1, usuarios[i].usuario,
+               usuarios[i].nome, usuarios[i].perfil);
+    }
+    printf("[1] Cadastrar [2] Atualizar [3] Excluir [0] Voltar: ");
+    int opcao = ler_opcao_segura();
+    if (opcao < 1 || opcao > 3) {
+        return ESTADO_MENU_PRINCIPAL;
+    }
+    char usuario[32], nome[50], senha[32];
+    if (opcao == 1) {
+        if (!linha("Usuario (sem espacos): ", usuario, sizeof(usuario)) ||
+            strpbrk(usuario, " \t")) {
+            puts("Usuario invalido.");
+            pausar_sistema();
+            return ESTADO_MENU_PRINCIPAL;
+        }
+        for (int i = 0; i < total; i++) {
+            if (strcmp(usuario, usuarios[i].usuario) == 0) {
+                puts("Usuario ja cadastrado.");
+                pausar_sistema();
+                return ESTADO_MENU_PRINCIPAL;
+            }
+        }
+    } else {
+        printf("Escolha o usuario pelo numero da lista: ");
+        int escolhido = ler_opcao_segura();
+        if (escolhido < 1 || escolhido > total) {
+            return ESTADO_MENU_PRINCIPAL;
+        }
+        snprintf(usuario, sizeof(usuario), "%s", usuarios[escolhido - 1].usuario);
+        if (strcmp(usuario, sessao->usuario) == 0) {
+            puts("Nao e possivel alterar ou excluir a propria conta durante a sessao.");
+            pausar_sistema();
+            return ESTADO_MENU_PRINCIPAL;
+        }
+    }
+    if (opcao == 3) {
+        printf("Confirmar exclusao? [1] Sim: ");
+        if (ler_opcao_segura() == 1 && excluir_usuario(sessao->usuario, usuario)) {
+            adicionar_log_auditoria(sessao->usuario, "EXCLUI_USUARIO", usuario);
+            puts("Usuario excluido.");
+        } else {
+            puts("Exclusao cancelada ou nao permitida.");
+        }
+    } else {
+        if (!linha("Nome: ", nome, sizeof(nome))) {
+            return ESTADO_MENU_PRINCIPAL;
+        }
+        printf("Perfil [1] Recepcao [2] Governanca [3] Administrador: ");
+        int perfil = ler_opcao_segura();
+        if (!linha("Senha (6 a 31 caracteres, sem espacos): ", senha, sizeof(senha)) ||
+            strpbrk(senha, " \t")) {
+            puts("Senha invalida.");
+            pausar_sistema();
+            return ESTADO_MENU_PRINCIPAL;
+        }
+        int salvo = salvar_usuario(usuario, nome, (PerfilUsuario)perfil, senha);
+        memset(senha, 0, sizeof(senha));
+        if (salvo) {
+            adicionar_log_auditoria(sessao->usuario, "SALVA_USUARIO", usuario);
+            puts("Usuario salvo nesta execucao.");
+        } else {
+            puts("Dados invalidos, limite atingido ou ultimo administrador.");
+        }
+    }
+    pausar_sistema();
+    return ESTADO_MENU_PRINCIPAL;
+}
+
 /* RECEPCAO */
 static EstadoSistema processar_menu_principal(const SessaoUsuario *sessao) {
     LIMPAR_TELA();
@@ -889,7 +1012,7 @@ static EstadoSistema processar_menu_principal(const SessaoUsuario *sessao) {
     }
     printf(" [9] Governança / Manutenção de Chalés\n");
     if (sessao->perfil == PERFIL_ADMIN) {
-        printf(" [10] Cadastro de chales\n [11] Relatorio de ocupacao e faturamento\n");
+        printf(" [10] Cadastro de chales\n [11] Relatorio de ocupacao e faturamento\n [12] Gerenciar usuarios\n");
     }
     printf(" [0] Sair (Logoff)\n");
     printf("\n--------------------------------------------------------------------------------\n");
@@ -920,6 +1043,8 @@ static EstadoSistema processar_menu_principal(const SessaoUsuario *sessao) {
         return sessao->perfil == PERFIL_ADMIN ? ESTADO_CHALES : ESTADO_MENU_PRINCIPAL;
     case 11:
         return sessao->perfil == PERFIL_ADMIN ? ESTADO_RELATORIO : ESTADO_MENU_PRINCIPAL;
+    case 12:
+        return sessao->perfil == PERFIL_ADMIN ? ESTADO_USUARIOS : ESTADO_MENU_PRINCIPAL;
     case 0:
         return ESTADO_SAIR;
     default:
@@ -967,6 +1092,9 @@ void executar_painel_recepcao(const SessaoUsuario *sessao) {
             break;
         case ESTADO_RELATORIO:
             estado = exibir_tela_relatorio(sessao);
+            break;
+        case ESTADO_USUARIOS:
+            estado = exibir_tela_usuarios(sessao);
             break;
         case ESTADO_AUDITORIA:
             // Conexão com o relatório de auditoria desenvolvido por Rayane
