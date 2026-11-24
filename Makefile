@@ -2,7 +2,9 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -I. -Ibackend -Itelas
 
 UNAME_S := $(shell uname -s 2>/dev/null)
-ifneq ($(UNAME_S),Darwin)
+ifeq ($(OS),Windows_NT)
+    LDLIBS += -lbcrypt
+else ifneq ($(UNAME_S),Darwin)
     LDLIBS += -lcrypto
 endif
 

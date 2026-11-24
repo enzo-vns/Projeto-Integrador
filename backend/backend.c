@@ -4,7 +4,10 @@
 #include <limits.h>
 #include <math.h>
 
-#ifdef __APPLE__
+#if defined(_WIN32)
+#include <windows.h>
+#include <bcrypt.h>
+#elif defined(__APPLE__)
 #include <CommonCrypto/CommonKeyDerivation.h>
 #include <CommonCrypto/CommonCryptoError.h>
 #include <CommonCrypto/CommonRandom.h>
@@ -732,6 +735,23 @@ static int converter_hex(const char *texto, unsigned char *saida, size_t tamanho
     return 1;
 }
 
+#ifdef _WIN32
+/* Usa o provedor criptografico do Windows para PBKDF2-HMAC-SHA256. */
+static int derivar_senha_windows(const char *senha, unsigned char *salt, size_t tamanho_salt,
+                                 unsigned char *saida, size_t tamanho_saida) {
+    BCRYPT_ALG_HANDLE algoritmo = NULL;
+    NTSTATUS status = BCryptOpenAlgorithmProvider(&algoritmo, BCRYPT_SHA256_ALGORITHM, NULL,
+                                                   BCRYPT_ALG_HANDLE_HMAC_FLAG);
+    if (status < 0) {
+        return 0;
+    }
+    status = BCryptDeriveKeyPBKDF2(algoritmo, (PUCHAR)senha, (ULONG)strlen(senha), salt,
+                                   (ULONG)tamanho_salt, 310000, saida, (ULONG)tamanho_saida, 0);
+    BCryptCloseAlgorithmProvider(algoritmo, 0);
+    return status >= 0;
+}
+#endif
+
 static int conferir_senha(const char *senha, const char *salt_hex, const char *hash_hex) {
     unsigned char salt[16], esperado[32], calculado[32];
     unsigned char diferenca = 0;
@@ -739,7 +759,11 @@ static int conferir_senha(const char *senha, const char *salt_hex, const char *h
         !converter_hex(hash_hex, esperado, sizeof(esperado))) {
         return 0;
     }
-#ifdef __APPLE__
+#if defined(_WIN32)
+    if (!derivar_senha_windows(senha, salt, sizeof(salt), calculado, sizeof(calculado))) {
+        return 0;
+    }
+#elif defined(__APPLE__)
     if (CCKeyDerivationPBKDF(kCCPBKDF2, senha, strlen(senha), salt, sizeof(salt),
                              kCCPRFHmacAlgSHA256, 310000, calculado, sizeof(calculado)) != kCCSuccess) {
         return 0;
@@ -792,7 +816,12 @@ int salvar_usuario(const char *usuario, const char *nome, PerfilUsuario perfil, 
                                   perfil != PERFIL_ADMIN && administradores == 1)) {
         return 0;
     }
-#ifdef __APPLE__
+#if defined(_WIN32)
+    if (BCryptGenRandom(NULL, salt, sizeof(salt), BCRYPT_USE_SYSTEM_PREFERRED_RNG) < 0 ||
+        !derivar_senha_windows(senha, salt, sizeof(salt), hash, sizeof(hash))) {
+        return 0;
+    }
+#elif defined(__APPLE__)
     if (CCRandomGenerateBytes(salt, sizeof(salt)) != kCCSuccess ||
         CCKeyDerivationPBKDF(kCCPBKDF2, senha, strlen(senha), salt, sizeof(salt),
                              kCCPRFHmacAlgSHA256, 310000, hash, sizeof(hash)) != kCCSuccess) {

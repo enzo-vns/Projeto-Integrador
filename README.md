@@ -12,7 +12,17 @@ Na pasta do projeto, execute `make run`. Para compilar sem executar, use `make`;
 
 Usuários iniciais de demonstração: `marcos.recepcao`, `diretoria.admin` e `ana.governanca`, todos com senha `123456`. Essas credenciais são públicas para testes e não devem ser usadas em produção. Os valores de autenticação iniciais são hashes PBKDF2-HMAC-SHA256 com salts individuais; novas senhas usam salt aleatório. O administrador pode cadastrar, atualizar e excluir usuários durante a execução. Alterações desaparecem ao encerrar.
 
-No macOS, a compilação usa CommonCrypto. Em Linux e Windows, requer cabeçalhos e biblioteca de desenvolvimento OpenSSL (`libcrypto`); no Windows, também é necessário configurar GCC, Make e OpenSSL no ambiente.
+No macOS, a compilação usa CommonCrypto. No Linux, requer cabeçalhos e biblioteca de desenvolvimento OpenSSL (`libcrypto`).
+
+### Executar no Windows com PowerShell
+
+Instale o GCC para Windows (MinGW-w64) e adicione-o ao `PATH`. Na pasta do projeto, execute:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\executar.ps1
+```
+
+O script compila e abre o sistema. Para compilar e executar os testes, use `powershell -ExecutionPolicy Bypass -File .\executar.ps1 -Testar`. O Windows usa a biblioteca criptográfica do próprio sistema; não é necessário instalar OpenSSL ou Make para usar o script.
 
 ## Funcionalidades
 

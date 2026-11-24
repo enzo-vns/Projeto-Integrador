@@ -1,7 +1,15 @@
 #include "backend/backend.h"
 #include "telas/telas.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 int main(void) {
+#ifdef _WIN32
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+#endif
     // Inicialização dos dados e regras do Back-end
     inicializar_chales();
     inicializar_reservas();
